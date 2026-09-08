@@ -2,8 +2,13 @@
 ==================
 
 amiya_idle.png、amiya_hi.png
-- 内容：游戏《明日方舟》干员「阿米娅」Q 版战斗小人（Spine 模型待机帧 / 动作帧）
-- 来源：PRTS Wiki（https://prts.wiki）干员模型在线查看器导出
+- 内容：游戏《明日方舟》干员「阿米娅」Q 版战斗小人单帧
+- 来源：PRTS Wiki（https://prts.wiki）干员模型在线查看器导出；仅作首次加载 / reduced-motion 隔离展示
+
+amiya_relax_01.png … amiya_relax_12.png、amiya_interact_01.png … amiya_interact_12.png
+- 内容：同一 `002_amiya` Spine 3.8 模型的 `Relax` / `Interact` 时间轴采样帧
+- 来源：Ark-Models 固定提交 https://github.com/isHarryh/Ark-Models/tree/3745e5c6e10b5252b2a5e1f1841ebef62b7ef15b/models/002_amiya
+- 渲染：PixiJS / Spine 3.8，统一 314×460 透明画布与共享 fit；无 AI 插值或重绘
 - 著作权归属：上海鹰角网络科技有限公司 / Hypergryph（游戏美术素材版权方）
 - 用途：本个人主页仅作非商业的学习与粉丝向展示，不用于任何盈利场景；
   若版权方认为不妥，联系后将立即移除。
