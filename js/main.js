@@ -25,8 +25,8 @@ document.addEventListener('DOMContentLoaded', () => {
     interact_step_b: { frames: makeFrames('amiya_interact_step_b_'), duration: 1133.3333253860474, tone: 3 },
   });
   const ACTION_TAIL = 'amiya_relax_01.png';
-  const STATIC_IDLE_FRAME = 'amiya_idle.png';
-  const STATIC_ACTION_FRAME = 'amiya_hi.png';
+  const STATIC_IDLE_FRAME = 'amiya_relax_01.png';
+  const STATIC_ACTION_FRAME = 'amiya_interact_01.png';
   const IDLE_FRAME_MS = 50;
   const ACTION_TAIL_MS = 90;
   const LONG_IDLE_MS = 60 * 1000;
@@ -35,8 +35,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const IRREGULAR_WINDOW_MS = 2200;
   const CHAOS_COOLDOWN_MS = 9000;
   const AWAY_NOTICE_COOLDOWN_MS = 55 * 1000;
-  const VOICE_COOLDOWN_MS = 900;
-  const MASCOT_HTML = '<img class="ark-sprite ark-sprite-idle" src="assets/mascot/amiya_idle.png" alt="阿米娅Q版小人" draggable="false"><img class="ark-sprite ark-sprite-action" src="assets/mascot/amiya_hi.png" alt="" draggable="false" aria-hidden="true" hidden>';
+  const VOICE_COOLDOWN_MS = 2200;
+  const MASCOT_HTML = '<img class="ark-sprite ark-sprite-idle" src="assets/mascot/amiya_relax_01.png" alt="阿米娅Q版小人" draggable="false"><img class="ark-sprite ark-sprite-action" src="assets/mascot/amiya_interact_01.png" alt="" draggable="false" aria-hidden="true" hidden>';
 
   const CLICK_LINES = [
     '博士，欢迎回来。今天的行程我已经整理好了。','嗯，我在。有什么任务尽管交给我吧。','请放心，罗德岛会一直陪在博士身边。','博士的指挥很可靠，我也要再认真一点。','工作告一段落的话，记得喝一口水哦。','这次行动的资料，我再核对一遍。','今天也一起把该完成的事做好吧。','理智恢复得差不多了，要不要稍微休息一下？','博士，需要我为您准备行动方案吗？','虽然会紧张……但我会努力跟上博士。','甲板上的风很舒服，忙完可以去走走。','我相信博士的判断，也相信大家。','别把所有事都一个人扛着，可以叫上我。','今天的罗德岛也很平稳，真是太好了。','资料已经分类完成，随时可以查看。','博士，眼睛累了就看远处一会儿吧。','我会把每一次托付都认真记下来。','就算是小小的一步，也是在向前走。','那、那个……被博士点到名，我很高兴。','请把接下来的任务也交给我吧。','大家都在努力，博士也别太勉强自己。','今天的目标，和博士一起完成。','报告：小队状态良好，可以随时出发。','博士的到来，让这里安心了很多。'
@@ -67,20 +67,44 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   const REDUCED_MOTION = window.matchMedia('(prefers-reduced-motion: reduce)');
 
+  const ALLOWED_AUDIO_EXT = /\.(ogg|mp3|wav|m4a|aac|webm)$/i;
+
+  const isLocalVoiceAsset = (src) => {
+    if (typeof src !== 'string' || !src.startsWith(VOICE_ASSET_DIR) || src.includes('\\')) return false;
+    let decoded;
+    try { decoded = decodeURIComponent(src); } catch (error) { return false; }
+    if (decoded.includes('\\') || decoded.includes('\0')) return false;
+    const cleanPath = decoded.split(/[?#]/, 1)[0];
+    if (!ALLOWED_AUDIO_EXT.test(cleanPath)) return false;
+    const relativePath = cleanPath.slice(VOICE_ASSET_DIR.length);
+    return Boolean(relativePath) && relativePath.split('/').every((part) => part && part !== '.' && part !== '..');
+  };
+
   function readVoiceCatalog() {
     const source = window.ARK_MASCOT_VOICE_ASSETS;
     const catalog = {};
     Object.keys(ACTIONS).forEach((key) => {
-      catalog[key] = source && Array.isArray(source[key]) ? source[key].filter((entry) => entry && typeof entry.src === 'string') : [];
+      catalog[key] = source && Array.isArray(source[key]) ? source[key].filter((entry) => {
+        if (!entry) return false;
+        if (typeof entry.src === 'string' && isLocalVoiceAsset(entry.src)) return true;
+        if (Array.isArray(entry.sources) && entry.sources.some(isLocalVoiceAsset)) return true;
+        return false;
+      }) : [];
     });
     return catalog;
   }
 
-  const isLocalVoiceAsset = (src) => {
-    if (typeof src !== 'string' || !src.startsWith(VOICE_ASSET_DIR) || src.includes('\\')) return false;
-    const relativePath = src.split(/[?#]/, 1)[0].slice(VOICE_ASSET_DIR.length);
-    return Boolean(relativePath) && relativePath.split('/').every((part) => part && part !== '.' && part !== '..');
-  };
+  function readPromoConfig() {
+    const promo = window.ARK_MASCOT_PROMO_CONFIG;
+    if (!promo || typeof promo !== 'object' || !promo.enabled || !Array.isArray(promo.entries)) return null;
+    const validEntries = promo.entries.filter((entry) => {
+      if (!entry) return false;
+      if (typeof entry.src === 'string' && isLocalVoiceAsset(entry.src)) return true;
+      if (Array.isArray(entry.sources) && entry.sources.some(isLocalVoiceAsset)) return true;
+      return false;
+    });
+    return validEntries.length ? { ...promo, entries: validEntries } : null;
+  }
 
   function init() {
     if (document.getElementById('ark-mascot')) return;
@@ -97,6 +121,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const actionSprite = root.querySelector('.ark-sprite-action');
     const soundButton = root.querySelector('#ark-sound');
     const voiceCatalog = readVoiceCatalog();
+    const promoConfig = readPromoConfig();
     const storage = {
       get(key, fallback) {
         try { return localStorage.getItem(key) ?? fallback; } catch (error) { return fallback; }
@@ -202,27 +227,74 @@ document.addEventListener('DOMContentLoaded', () => {
         idleFrameTimer = setTimeout(start, 420);
       } else start();
     };
-    const say = (text, hold = 3800) => {
+    const say = (text, minHold = 3600, audioObj = null) => {
       clearSpeechTimers();
       bubble.classList.add('show');
       bubble.textContent = '';
+      const token = state.voiceToken;
+      let textFinished = false;
+      let audioFinished = !audioObj;
+
+      const scheduleBubbleHide = (delayMs) => {
+        clearTimeout(hideTimer);
+        hideTimer = setTimeout(() => {
+          if (token === state.voiceToken) {
+            bubble.classList.remove('show');
+          }
+        }, Math.max(800, delayMs));
+      };
+
+      const tryHide = () => {
+        // 字出现时间至少要和语音时间一样长：文字展示完毕且音频播放结束时才开始倒计时
+        if (textFinished && audioFinished) {
+          scheduleBubbleHide(1200);
+        }
+      };
+
+      if (audioObj) {
+        const onAudioDone = () => {
+          if (token !== state.voiceToken) return;
+          audioFinished = true;
+          tryHide();
+        };
+        audioObj.addEventListener('ended', onAudioDone, { once: true });
+        audioObj.addEventListener('pause', onAudioDone, { once: true });
+        audioObj.addEventListener('error', onAudioDone, { once: true });
+      }
+
       if (REDUCED_MOTION.matches) {
         bubble.textContent = text;
-        hideTimer = setTimeout(() => bubble.classList.remove('show'), hold);
+        textFinished = true;
+        if (!audioObj) {
+          scheduleBubbleHide(minHold);
+        } else {
+          tryHide();
+        }
         return;
       }
+
       let index = 0;
       const caret = document.createElement('span');
       caret.className = 'ark-caret';
       caret.textContent = '_';
+      const stepMs = Math.max(16, Math.min(26, Math.floor(1200 / Math.max(text.length, 1))));
       typeTimer = setInterval(() => {
+        if (token !== state.voiceToken) {
+          clearInterval(typeTimer);
+          return;
+        }
         bubble.textContent = text.slice(0, ++index);
         if (index < text.length) return;
         clearInterval(typeTimer);
         typeTimer = null;
         bubble.appendChild(caret);
-        hideTimer = setTimeout(() => bubble.classList.remove('show'), hold);
-      }, 28);
+        textFinished = true;
+        if (!audioObj) {
+          scheduleBubbleHide(minHold);
+        } else {
+          tryHide();
+        }
+      }, stepMs);
     };
     const syncSoundButton = () => {
       soundButton.textContent = muted ? '♪̸' : '♪';
@@ -234,6 +306,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!voiceAudio) return;
       voiceAudio.onerror = null;
       voiceAudio.onended = null;
+      voiceAudio.onpause = null;
       try { voiceAudio.pause(); } catch (error) { /* 媒体元素不可用时继续清理状态。 */ }
       try { voiceAudio.currentTime = 0; } catch (error) { /* 尚未加载媒体时 currentTime 可能不可写。 */ }
     };
@@ -270,67 +343,104 @@ document.addEventListener('DOMContentLoaded', () => {
         });
       } catch (error) { /* 浏览器禁用音频时保持静默。 */ }
     };
-    const pickVoiceAsset = (actionKey, clickType, comboCount, line) => {
-      const entries = (voiceCatalog[actionKey] || []).filter((entry) => {
-        if (!isLocalVoiceAsset(entry.src)) return false;
+    const pickPromoAsset = (actionKey, clickType, comboCount, currentCount) => {
+      if (!promoConfig || !promoConfig.enabled || !Array.isArray(promoConfig.entries) || !promoConfig.entries.length) return null;
+      if (promoConfig.triggerMode === 'milestone') {
+        const milestones = Array.isArray(promoConfig.triggerMilestones) ? promoConfig.triggerMilestones : [];
+        if (!milestones.includes(currentCount)) return null;
+      }
+      const candidates = promoConfig.entries.filter((entry) => {
+        if (entry.action && entry.action !== actionKey) return false;
         const types = Array.isArray(entry.types) ? entry.types : entry.type ? [entry.type] : [];
         if (types.length && !types.includes(clickType) && !types.includes('any')) return false;
         const comboMin = Number(entry.comboMin);
         const comboMax = Number(entry.comboMax);
         if (Number.isFinite(comboMin) && comboCount < comboMin) return false;
         if (Number.isFinite(comboMax) && comboCount > comboMax) return false;
-        if (Array.isArray(entry.lines) && entry.lines.length && !entry.lines.includes(line)) return false;
         return true;
       });
+      if (!candidates.length) return null;
+      return candidates[Math.floor(Math.random() * candidates.length)];
+    };
+
+    const pickVoiceAsset = (actionKey) => {
+      const entries = voiceCatalog[actionKey] || [];
       if (!entries.length) return null;
-      const fresh = entries.filter((entry) => {
-        if ((entry.id || entry.src) === state.lastVoiceId) return false;
-        if (state.recentVoiceLines.includes(line)) return false;
-        return true;
-      });
-      if (state.recentVoiceLines.includes(line) && !fresh.length) return null;
+      const fresh = entries.filter((entry) => (entry.id || entry.src) !== state.lastVoiceId);
       const pool = fresh.length ? fresh : entries;
       const total = pool.reduce((sum, entry) => sum + (Number(entry.weight) > 0 ? Number(entry.weight) : 1), 0);
       let cursor = Math.random() * total;
-      return pool.find((entry) => { cursor -= Number(entry.weight) > 0 ? Number(entry.weight) : 1; return cursor <= 0; }) || pool[0];
+      for (const entry of pool) {
+        cursor -= (Number(entry.weight) > 0 ? Number(entry.weight) : 1);
+        if (cursor <= 0) return entry;
+      }
+      return pool[0];
     };
+
+    const getEntryLine = (entry) => {
+      if (!entry) return null;
+      if (Array.isArray(entry.lines) && entry.lines.length) {
+        const candidates = entry.lines.filter((line) => !state.recentVoiceLines.includes(line));
+        return candidates.length ? candidates[Math.floor(Math.random() * candidates.length)] : entry.lines[0];
+      }
+      if (typeof entry.line === 'string' && entry.line.trim()) return entry.line.trim();
+      return null;
+    };
+
     const rememberVoiceLine = (line) => {
+      if (!line) return;
       state.recentVoiceLines.push(line);
       if (state.recentVoiceLines.length > 5) state.recentVoiceLines.shift();
     };
-    const playVoice = (actionKey, clickType, comboCount, line) => {
-      if (muted || Date.now() - state.lastVoiceAt < VOICE_COOLDOWN_MS) return false;
-      const entry = pickVoiceAsset(actionKey, clickType, comboCount, line);
-      if (!entry) return false;
-      try { voiceAudio = voiceAudio || new Audio(); } catch (error) { return false; }
+
+    const playVoice = (entry, line) => {
+      if (muted || !entry) return null;
       stopVoice();
       const token = state.voiceToken;
-      const voiceId = entry.id || entry.src;
-      let failureHandled = false;
-      const fallback = () => {
-        if (failureHandled || token !== state.voiceToken) return;
-        failureHandled = true;
-        if (state.recentVoiceLines[state.recentVoiceLines.length - 1] === line) state.recentVoiceLines.pop();
-        stopVoice();
-        blip(actionKey, clickType);
+      try { voiceAudio = voiceAudio || new Audio(); } catch (error) { return null; }
+      const candidateSources = (Array.isArray(entry.sources) && entry.sources.length ? entry.sources : [entry.src]).filter(isLocalVoiceAsset);
+      if (!candidateSources.length) return null;
+      const voiceId = entry.id || candidateSources[0];
+      let sourceIndex = 0;
+
+      const tryPlay = () => {
+        if (token !== state.voiceToken) return;
+        try {
+          voiceAudio.preload = 'auto';
+          const volume = Number(entry.volume);
+          voiceAudio.volume = Number.isFinite(volume) ? Math.min(1, Math.max(0, volume)) : 0.78;
+          voiceAudio.src = candidateSources[sourceIndex];
+          voiceAudio.onerror = () => {
+            if (token !== state.voiceToken) return;
+            if (sourceIndex < candidateSources.length - 1) {
+              sourceIndex += 1;
+              tryPlay();
+            }
+          };
+          const result = voiceAudio.play();
+          if (result && typeof result.catch === 'function') {
+            result.catch(() => {
+              if (token !== state.voiceToken) return;
+              if (sourceIndex < candidateSources.length - 1) {
+                sourceIndex += 1;
+                tryPlay();
+              }
+            });
+          }
+        } catch (error) {}
       };
+
       try {
-        voiceAudio.preload = 'auto';
-        const volume = Number(entry.volume);
-        voiceAudio.volume = Number.isFinite(volume) ? Math.min(1, Math.max(0, volume)) : 0.72;
-        voiceAudio.onerror = fallback;
-        voiceAudio.src = entry.src;
         state.lastVoiceAt = Date.now();
         state.lastVoiceId = voiceId;
-        const result = voiceAudio.play();
         rememberVoiceLine(line);
-        if (result && typeof result.catch === 'function') result.catch(fallback);
-        return true;
+        tryPlay();
+        return voiceAudio;
       } catch (error) {
         state.lastVoiceAt = 0;
         state.lastVoiceId = '';
         stopVoice();
-        return false;
+        return null;
       }
     };
     const burst = (x, y) => {
@@ -438,7 +548,7 @@ document.addEventListener('DOMContentLoaded', () => {
           if (token !== state.actionToken || state.phase !== 'action') return;
           if (index === action.frames.length - 1) {
             setSpriteFrame(actionSprite, ACTION_TAIL);
-            actionTimer = setTimeout(() => finishAction(token), ACTION_TAIL_MS);
+            actionTimer = setTimeout(() => finishAction(token, false), ACTION_TAIL_MS);
           } else advance(index + 1);
         }, Math.max(0, target - performance.now()));
       };
@@ -468,6 +578,20 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     const restartIdleAndNotices = () => { runIdle(); scheduleIdleLines(); scheduleAway(); };
     const activate = (event) => {
+      // 1. 核心要求：每一次点击立即结束上一次的语音、打字机和气泡倒计时
+      stopAudio();
+      clearSpeechTimers();
+
+      if (!muted) {
+        try {
+          const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+          if (AudioContextClass) {
+            audioContext = audioContext || new AudioContextClass();
+            if (audioContext.state === 'suspended') audioContext.resume().catch(() => {});
+          }
+        } catch (error) {}
+      }
+
       const now = Date.now();
       const rect = stage.getBoundingClientRect();
       const point = {
@@ -479,11 +603,39 @@ document.addEventListener('DOMContentLoaded', () => {
       count += 1;
       storage.set('ark_pokes', String(count));
       burst(point.x, point.y);
-      stopAudio();
+
+      // 2. 核心要求：开启下一次的动作动画
       playAction(actionKey);
-      const line = selectInteractionLine(clickType);
-      say(line);
-      if (!playVoice(actionKey, clickType, state.comboCount, line)) blip(actionKey, clickType);
+
+      // 3. 核心要求：开启下一次的字以及字所对应的语音
+      let voiceEntry = null;
+      let line = null;
+
+      // 检查里程碑宣传触发 (如第 5, 10, 20, 50, 100 次点击)
+      if (promoConfig && Array.isArray(promoConfig.triggerMilestones) && promoConfig.triggerMilestones.includes(count)) {
+        const pEntries = promoConfig.entries || [];
+        voiceEntry = pEntries[Math.floor(Math.random() * pEntries.length)] || null;
+        if (voiceEntry) line = getEntryLine(voiceEntry);
+      }
+
+      // 常规动作匹配可用语音条目（不再被冷却拦截，点击即发声）
+      if (!voiceEntry) {
+        voiceEntry = pickVoiceAsset(actionKey);
+        if (voiceEntry) line = getEntryLine(voiceEntry);
+      }
+
+      if (!line) line = selectInteractionLine(clickType);
+
+      // 4. 播放该语音，并将 audio 对象传给 say，使“字出现时间至少和语音时间一样长”
+      let audioInstance = null;
+      if (voiceEntry && !muted) {
+        audioInstance = playVoice(voiceEntry, line);
+      } else if (!voiceEntry && !muted) {
+        blip(actionKey, clickType);
+      }
+
+      say(line, 3600, audioInstance);
+
       scheduleIdleLines();
       scheduleAway();
     };
@@ -526,6 +678,7 @@ document.addEventListener('DOMContentLoaded', () => {
         restartIdleAndNotices();
       }
     });
+    window.addEventListener('pagehide', stopAudio);
     const onMotionPreferenceChange = () => {
       stopIdle();
       clearActionTimer();

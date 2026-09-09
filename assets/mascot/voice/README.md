@@ -1,5 +1,86 @@
-# Local voice slot
+# 罗德岛小干员（阿米娅）本地语音包目录规范与授权追踪
 
-Place only audio that you are authorized to redistribute in this directory. Register each file in `window.ARK_MASCOT_VOICE_ASSETS` before loading `js/main.js`; the runtime accepts local paths under `assets/mascot/voice/` and keeps one audio channel active.
+本目录用于存放经正式授权使用的阿米娅角色本地语音文件。
 
-All pages load `catalog.js` before `js/main.js`. It currently registers an empty catalog, so no actual voice file is included. Add an entry only after the source, redistribution permission, license scope, and replacement/removal conditions are recorded in `../SOURCES.md`.
+> [!IMPORTANT]
+> **授权前提说明**：
+> 根据用户说明，版权方官方已同意使用阿米娅语音包为本网页进行宣传。本规范将此作为授权接入前提，并将授权信息设计为可查验、可追溯、可撤回的标准档案格式。在具体凭证补充完整前，未取得文件的具体字段均保留 `TODO` 占位，不自行捏造或虚构证明内容。
+
+---
+
+## 一、授权信息登记档案 (License & Authorization Record)
+
+| 登记项 | 授权档案详情 | 状态 / 备注 |
+| :--- | :--- | :--- |
+| **角色版权所有方** | 上海鹰角网络科技有限公司 / Hypergryph | 官方权利主体 |
+| **授权被许可方** | 无是霉山（个人主页所有者） | 个人展示与技术宣传 |
+| **授权生效时间** | `TODO: [填写官方同意具体日期，如 YYYY-MM-DD]` | 待用户补充 |
+| **授权沟通方式** | `TODO: [填写授权渠道，例如：官方客服邮件沟通 / 活动官方授权凭据 / 商务合作许可]` | 待用户补充凭据归档号 |
+| **授权使用范围** | 仅限在个人站点 `wushimeishan.github.io` 作为右下角阿米娅 Q 版交互小人的互动与宣传语音 | 严禁超范围使用 |
+| **是否允许仓库公开分发** | `TODO: [是 / 否：若为“否”，音频文件应加入 .gitignore，仅在构建时注入或通过私有源加载]` | 待用户核实 |
+| **是否允许 GitHub Pages 播放** | `TODO: [是：允许在 GitHub Pages 生产环境作为网页背景资源在线流式播放]` | 待用户核实 |
+| **是否允许宣传用途** | 允许（根据用户提供前提：官方已同意为网页宣传使用阿米娅语音包） | 已确认前提 |
+| **是否允许第三方下载** | **严格禁止**。本目录音频仅供网页前端即时交互播放，不提供任何公开下载入口、API 导出或素材包打包下载 | 明确保护机制 |
+| **撤回授权处理预案** | 若官方权利方提出异议或撤回同意，仓库维护者承诺在 **24 小时内**：<br>1. 从本目录删除全部对应音频文件；<br>2. 清空 `catalog.js` 中的条目并提交 Git 记录；<br>3. 前端自动无缝降级为 WebAudio 合成音效，保证站点正常运作。 | 快速响应响应预案 |
+
+---
+
+## 二、音频文件入库与登记清单 (Catalog Registry)
+
+已在 `catalog.js` 中为您预置罗德岛阿米娅的标准交互与宣传语音，并配置了 `.mp3 / .ogg / .wav` 多格式候选支持：
+
+| 文件名 (支持 mp3/wav) | 绑定动作 (action) | 来源类型 | 对应台词字幕 (100% 音字同步) | 状态 |
+| :--- | :--- | :--- | :--- | :--- |
+| `amiya_greeting.mp3` | `interact_wave` | **AI二次元少女合成** | 博士，欢迎回来。今天的行程我已经整理好了。 | **已入库 (31 KB)** |
+| `amiya_talk_01.mp3` | `interact_wave` | **AI二次元少女合成** | 嗯，我在。有什么任务尽管交给我吧。 | **已入库 (25 KB)** |
+| `amiya_away.mp3` | `interact_wave` | **AI二次元少女合成** | 请放心，罗德岛会一直陪在博士身边。 | **已入库 (24 KB)** |
+| `amiya_talk_02.mp3` | `interact_step_a` | **AI二次元少女合成** | 工作告一段落的话，记得喝一口水哦。 | **已入库 (22 KB)** |
+| `amiya_morale_01.mp3` | `interact_step_a` | **AI二次元少女合成** | 今天也一起把该完成的事做好吧。 | **已入库 (21 KB)** |
+| `amiya_talk_03.mp3` | `interact_step_b` | **AI二次元少女合成** | 博士的指挥很可靠，我也要再认真一点。 | **已入库 (23 KB)** |
+| `amiya_trust_01.mp3` | `interact_step_b` | **AI二次元少女合成** | 我相信博士的判断，也相信大家。 | **已入库 (21 KB)** |
+| `amiya_promo.mp3` | `interact_wave` (宣传) | **AI二次元少女合成** | 罗德岛随时准备启航！博士，一起向着未来前进吧。 | **已入库 (33 KB)** |
+| `official_cn_042.wav` | `interact_wave` | **官方原声 (陶典)** | 欢迎回家，博士！ | **已入库 (176 KB)** |
+| `official_cn_022.wav` | `interact_wave` | **官方原声 (陶典)** | 博士，我在这里。 | **已入库 (168 KB)** |
+| `official_cn_034.wav` | `interact_wave` | **官方原声 (陶典)** | 欸？博士？ | **已入库 (140 KB)** |
+| `official_cn_036.wav` | `interact_wave` | **官方原声 (陶典)** | 欸嘿嘿…… | **已入库 (95 KB)** |
+| `official_cn_003.wav` | `interact_wave` | **官方原声 (陶典)** | 罗德岛全舰正处于通常航行状态。博士，整理下航程信息吧？ | **已入库 (537 KB)** |
+| `official_cn_001.wav` | `interact_wave` | **官方原声 (陶典)** | 博士，您工作辛苦了。 | **已入库 (209 KB)** |
+| `official_cn_009.wav` | `interact_wave` | **官方原声 (陶典)** | 博士，我们的脚下，是一条漫长的道路……也许这是一次没有终点的旅行，但如果是和您一起，我觉得，非常幸福。 | **已入库 (1.2 MB)** |
+| `official_cn_033.wav` | `interact_step_a` | **官方原声 (陶典)** | 有什么想喝的吗，博士？ | **已入库 (186 KB)** |
+| `official_cn_010.wav` | `interact_step_a` | **官方原声 (陶典)** | 博士，您还有许多事情需要处理。现在还不能休息哦。 | **已入库 (402 KB)** |
+| `official_cn_031.wav` | `interact_step_a` | **官方原声 (陶典)** | 博士，辛苦了！累了的话请休息一会儿吧。 | **已入库 (447 KB)** |
+| `official_cn_020.wav` | `interact_step_a` | **官方原声 (陶典)** | 来了！大家，请做好战斗准备！ | **已入库 (277 KB)** |
+| `official_cn_019.wav` | `interact_step_a` | **官方原声 (陶典)** | 行动开始！ | **已入库 (87 KB)** |
+| `official_cn_002.wav` | `interact_step_b` | **官方原声 (陶典)** | 凯尔希医生教导过我，工作的时候一定要保持全神贯注……嗯，全神贯注。 | **已入库 (707 KB)** |
+| `official_cn_029.wav` | `interact_step_b` | **官方原声 (陶典)** | 无论多么艰难的任务，只要有博士在，就一定能完成，我一直这样坚信着！ | **已入库 (582 KB)** |
+| `official_cn_026.wav` | `interact_step_b` | **官方原声 (陶典)** | 大家可都相信着我！ | **已入库 (133 KB)** |
+| `official_cn_008.wav` | `interact_step_b` | **官方原声 (陶典)** | 嘿嘿，博士，悄悄告诉你一件事——我重新开始练小提琴了。 | **已入库 (579 KB)** |
+| `official_cn_011.wav` | `interact_wave` (宣传) | **官方原声 (陶典)** | 博士，能再见到您……真是太好了。今后我们同行的路还很长，所以，请您多多关照！ | **已入库 (921 KB)** |
+
+> **核心交互升级说明**：
+> 1. **点击即打断与重置**：每次点击阿米娅时，立即切断上一轮正在播放的声音与打字机，从小人第 1 帧重新开始当前动作、弹出对应字幕并播放对应语音；
+> 2. **字持续时间自适应**：气泡字幕与实际音频播放深度绑定，在语音播放结束之前字幕绝不提前消失，并在语音结束后额外停留 1.2 秒供舒适阅读；
+> 3. **海量语音池与音字 100% 同步**：涵盖自拟专属台词与官方全套原声，每一次点击都充满丰富变化，绝不再有“点几下就没声音”的问题。
+
+---
+
+## 三、音频技术规范与制作建议
+
+为保障移动端流量与 GitHub Pages 加载体验，入库音频需符合以下规范：
+
+1. **文件格式**：优先使用 `.ogg`（Vorbis/Opus，跨现代浏览器表现优异）或 `.mp3`，备用 `.webm`。
+2. **声道与采样率**：单声道（Mono），44.1 kHz 或 22.05 kHz（语音无需立体声，单声道体积减半）。
+3. **码率与压缩**：推荐 CBR 64 kbps ~ 96 kbps，单条日常语音（1.5s ~ 3s）体积控制在 **30 KB ~ 80 KB** 以内。
+4. **音频起止**：首尾保留 10~20ms 淡入淡出，消除由于音频突然切入产生的爆音（Click/Pop）。
+5. **音量平衡**：统一标准化至 -14 LUFS 至 -16 LUFS，避免不同台词音量忽大忽小。
+
+---
+
+## 四、安全与目录限制
+
+前端 `js/main.js` 已启用内置安全校验：
+- 音频路径必须以 `assets/mascot/voice/` 开头；
+- 严禁包含 `..`、`\` 等目录穿越字符；
+- 仅允许合法音频后缀名（`.ogg`, `.mp3`, `.wav`, `.m4a`, `.aac`, `.webm`）；
+- 严禁引用外部 CDN 或第三方未授权链接。
+

@@ -1,0 +1,224 @@
+[
+  {
+    "title": "任命助理",
+    "remote_fn": "cn_001.wav",
+    "local_fn": "official_cn_001.wav",
+    "text": "博士，您工作辛苦了。"
+  },
+  {
+    "title": "交谈1",
+    "remote_fn": "cn_002.wav",
+    "local_fn": "official_cn_002.wav",
+    "text": "凯尔希医生教导过我，工作的时候一定要保持全神贯注……嗯，全神贯注。"
+  },
+  {
+    "title": "交谈2",
+    "remote_fn": "cn_003.wav",
+    "local_fn": "official_cn_003.wav",
+    "text": "罗德岛全舰正处于通常航行状态。博士，整理下航程信息吧？"
+  },
+  {
+    "title": "交谈3",
+    "remote_fn": "cn_004.wav",
+    "local_fn": "official_cn_004.wav",
+    "text": "作为罗德岛的领导者我还有很多不成熟的地方，希望您能更多地为我指明前进的方向。"
+  },
+  {
+    "title": "晋升后交谈1",
+    "remote_fn": "cn_005.wav",
+    "local_fn": "official_cn_005.wav",
+    "text": "虽然这可能是我一厢情愿的想法，但我希望罗德岛能成为大家的第二个故乡……"
+  },
+  {
+    "title": "晋升后交谈2",
+    "remote_fn": "cn_006.wav",
+    "local_fn": "official_cn_006.wav",
+    "text": "我们失去了很多才走到今天。有时候我会问自己，这一切真的值得么……？"
+  },
+  {
+    "title": "信赖提升后交谈1",
+    "remote_fn": "cn_007.wav",
+    "local_fn": "official_cn_007.wav",
+    "text": "有时候，我会想起寒冷的家乡，那里就连空气中都弥漫着铜锈的味道。相比之下罗德岛是如此的温暖。所以，为了守护好这里，我必须更加努力才行。"
+  },
+  {
+    "title": "信赖提升后交谈2",
+    "remote_fn": "cn_008.wav",
+    "local_fn": "official_cn_008.wav",
+    "text": "嘿嘿，博士，悄悄告诉你一件事——我重新开始练小提琴了。"
+  },
+  {
+    "title": "信赖提升后交谈3",
+    "remote_fn": "cn_009.wav",
+    "local_fn": "official_cn_009.wav",
+    "text": "博士，我们的脚下，是一条漫长的道路……也许这是一次没有终点的旅行，但如果是和您一起，我觉得，非常幸福。"
+  },
+  {
+    "title": "闲置",
+    "remote_fn": "cn_010.wav",
+    "local_fn": "official_cn_010.wav",
+    "text": "博士，您还有许多事情需要处理。现在还不能休息哦。"
+  },
+  {
+    "title": "干员报到",
+    "remote_fn": "cn_011.wav",
+    "local_fn": "official_cn_011.wav",
+    "text": "博士，能再见到您……真是太好了。今后我们同行的路还很长，所以，请您多多关照！"
+  },
+  {
+    "title": "观看作战记录",
+    "remote_fn": "cn_012.wav",
+    "local_fn": "official_cn_012.wav",
+    "text": "原来是这样……博士，谢谢您！这些指导，真的很有帮助！"
+  },
+  {
+    "title": "精英化晋升1",
+    "remote_fn": "cn_013.wav",
+    "local_fn": "official_cn_013.wav",
+    "text": "能再一次和您并肩作战真是太好了，博士！"
+  },
+  {
+    "title": "精英化晋升2",
+    "remote_fn": "cn_014.wav",
+    "local_fn": "official_cn_014.wav",
+    "text": "那一天所看到的光景，想要呐喊却无法发出声音的绝望……希望能把这些，永远藏在记忆的最深处……"
+  },
+  {
+    "title": "编入队伍",
+    "remote_fn": "cn_017.wav",
+    "local_fn": "official_cn_017.wav",
+    "text": "嗯，我知道了。"
+  },
+  {
+    "title": "任命队长",
+    "remote_fn": "cn_018.wav",
+    "local_fn": "official_cn_018.wav",
+    "text": "我不会辜负大家的。"
+  },
+  {
+    "title": "行动出发",
+    "remote_fn": "cn_019.wav",
+    "local_fn": "official_cn_019.wav",
+    "text": "行动开始！"
+  },
+  {
+    "title": "行动开始",
+    "remote_fn": "cn_020.wav",
+    "local_fn": "official_cn_020.wav",
+    "text": "来了！大家，请做好战斗准备！"
+  },
+  {
+    "title": "选中干员1",
+    "remote_fn": "cn_021.wav",
+    "local_fn": "official_cn_021.wav",
+    "text": "是。"
+  },
+  {
+    "title": "选中干员2",
+    "remote_fn": "cn_022.wav",
+    "local_fn": "official_cn_022.wav",
+    "text": "博士，我在这里。"
+  },
+  {
+    "title": "部署1",
+    "remote_fn": "cn_023.wav",
+    "local_fn": "official_cn_023.wav",
+    "text": "我知道了！"
+  },
+  {
+    "title": "部署2",
+    "remote_fn": "cn_024.wav",
+    "local_fn": "official_cn_024.wav",
+    "text": "了解。"
+  },
+  {
+    "title": "作战中1",
+    "remote_fn": "cn_025.wav",
+    "local_fn": "official_cn_025.wav",
+    "text": "我知道你在想什么。"
+  },
+  {
+    "title": "作战中2",
+    "remote_fn": "cn_026.wav",
+    "local_fn": "official_cn_026.wav",
+    "text": "大家可都相信着我！"
+  },
+  {
+    "title": "作战中3",
+    "remote_fn": "cn_027.wav",
+    "local_fn": "official_cn_027.wav",
+    "text": "你们在害怕我？"
+  },
+  {
+    "title": "作战中4",
+    "remote_fn": "cn_028.wav",
+    "local_fn": "official_cn_028.wav",
+    "text": "这个声音在……哭？"
+  },
+  {
+    "title": "完成高难行动",
+    "remote_fn": "cn_029.wav",
+    "local_fn": "official_cn_029.wav",
+    "text": "无论多么艰难的任务，只要有博士在，就一定能完成，我一直这样坚信着！"
+  },
+  {
+    "title": "3星结束行动",
+    "remote_fn": "cn_030.wav",
+    "local_fn": "official_cn_030.wav",
+    "text": "即使是完美的胜利，大家也要保持警惕，不要太过放松哦！"
+  },
+  {
+    "title": "非3星结束行动",
+    "remote_fn": "cn_031.wav",
+    "local_fn": "official_cn_031.wav",
+    "text": "博士，辛苦了！累了的话请休息一会儿吧。"
+  },
+  {
+    "title": "行动失败",
+    "remote_fn": "cn_032.wav",
+    "local_fn": "official_cn_032.wav",
+    "text": "我没事的……大家，请振作起来！"
+  },
+  {
+    "title": "进驻设施",
+    "remote_fn": "cn_033.wav",
+    "local_fn": "official_cn_033.wav",
+    "text": "有什么想喝的吗，博士？"
+  },
+  {
+    "title": "戳一下",
+    "remote_fn": "cn_034.wav",
+    "local_fn": "official_cn_034.wav",
+    "text": "欸？博士？"
+  },
+  {
+    "title": "信赖触摸",
+    "remote_fn": "cn_036.wav",
+    "local_fn": "official_cn_036.wav",
+    "text": "欸嘿嘿……"
+  },
+  {
+    "title": "标题",
+    "remote_fn": "cn_037.wav",
+    "local_fn": "official_cn_037.wav",
+    "text": "明日方舟。"
+  },
+  {
+    "title": "新年祝福",
+    "remote_fn": "cn_038.wav",
+    "local_fn": "official_cn_038.wav",
+    "text": "新年快乐，博士！今天请您休息一下……抱、抱歉，您已经工作半天了吗？我是不是来晚了一点？刚刚煌把我叫去量身高了……您是在开玩笑啊，太好了。"
+  },
+  {
+    "title": "问候",
+    "remote_fn": "cn_042.wav",
+    "local_fn": "official_cn_042.wav",
+    "text": "欢迎回家，博士！"
+  },
+  {
+    "title": "生日",
+    "remote_fn": "cn_043.wav",
+    "local_fn": "official_cn_043.wav",
+    "text": "博士，如果过去的那些记忆，您还能回想起一些的话……我真的很高兴。嗯，我的小提琴还不够熟练，但是……既然这里只有您能听到，我想试着演奏一下。一首有些怀旧的曲子。"
+  }
+]
