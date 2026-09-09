@@ -350,6 +350,9 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => particle.remove(), 740);
       }
     };
+    const clearBurstParticles = () => {
+      document.querySelectorAll('.ark-particle').forEach((particle) => particle.remove());
+    };
     const classifyClick = (now, point) => {
       const quietFor = now - state.lastUserAt;
       if (quietFor > IRREGULAR_WINDOW_MS) state.recentClicks = [];
@@ -527,6 +530,8 @@ document.addEventListener('DOMContentLoaded', () => {
       stopIdle();
       clearActionTimer();
       clearSpeechTimers();
+      clearBurstParticles();
+      bubble.classList.remove('show');
       stopAudio();
       state.actionToken += 1;
       state.phase = 'idle';
