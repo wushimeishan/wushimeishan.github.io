@@ -10,17 +10,13 @@
 *::-webkit-scrollbar-thumb{background:#11303a;border:1px solid var(--ark)}
 .ark-gold{color:var(--ark-gold)}
 .ark-mascot{position:fixed;right:24px;bottom:16px;z-index:90;width:124px;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent;touch-action:manipulation;isolation:isolate}
-.ark-bob{width:100%;animation:ark-float 3.4s ease-in-out infinite}
-.ark-stage{position:relative;width:100%;aspect-ratio:314/460;transform-origin:50% 92%}
+.ark-bob{width:100%}
+.ark-stage{position:relative;width:100%;aspect-ratio:314/460}
 .ark-stage::after{content:"";position:absolute;left:14%;right:14%;bottom:-4px;height:12px;border-radius:50%;background:radial-gradient(ellipse at center,rgba(47,196,214,.28),transparent 70%);filter:blur(1px)}
-.ark-sprite{width:100%;height:100%;display:block;object-fit:contain;filter:drop-shadow(0 6px 10px rgba(0,0,0,.5));transition:filter .25s;image-rendering:auto}
-.ark-sprite-idle{position:absolute;inset:0;opacity:1}
-.ark-sprite-hi{position:absolute;inset:0;opacity:0}
-.ark-stage.is-action .ark-sprite-idle{opacity:0}
-.ark-stage.is-action .ark-sprite-hi{opacity:1}
+.ark-sprite{position:absolute;inset:0;width:100%;height:100%;display:block;object-fit:contain;filter:drop-shadow(0 6px 10px rgba(0,0,0,.5));image-rendering:auto}
+.ark-sprite[hidden]{display:none}
 .ark-stage:focus-visible{outline:2px solid var(--ark);outline-offset:4px}
 .ark-mascot:hover .ark-sprite{filter:drop-shadow(0 6px 16px rgba(47,196,214,.45))}
-.ark-mascot:hover .ark-bob{animation-duration:2.1s}
 .ark-bubble{position:absolute;right:0;bottom:calc(100% - 2px);transform:translateY(8px);width:min(230px,calc(100vw - 24px));max-width:calc(100vw - 24px);background:var(--ark-ink);border:1px solid var(--ark);box-shadow:0 0 20px rgba(47,196,214,.22);padding:9px 13px;font:11px/1.6 var(--mono);color:var(--text);opacity:0;visibility:hidden;transition:opacity .22s ease,transform .22s ease;pointer-events:none;text-align:center;overflow-wrap:anywhere;word-break:break-word;white-space:normal}
 .ark-bubble.show{opacity:1;visibility:visible;transform:translateY(0)}
 .ark-bubble::before{content:"";position:absolute;top:100%;right:28px;border:6px solid transparent;border-top-color:var(--ark)}
@@ -30,9 +26,7 @@
 .ark-sound:hover{border-color:var(--ark);box-shadow:0 0 10px rgba(47,196,214,.4)}
 .ark-sound.is-off{color:var(--muted)}
 .ark-particle{position:fixed;width:8px;height:8px;pointer-events:none;z-index:99;transform:rotate(45deg);animation:ark-burst .72s ease-out forwards}
-@keyframes ark-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
 @keyframes ark-burst{to{transform:translate(var(--dx),var(--dy)) rotate(240deg) scale(.15);opacity:0}}
-@media (prefers-reduced-motion:reduce){.ark-bob{animation:none}}
 @media(max-width:760px){.ark-mascot{width:88px;right:12px;bottom:10px}.ark-bubble{width:min(184px,calc(100vw - 24px));max-width:calc(100vw - 24px);font-size:10px;padding:8px 10px}.ark-bubble::before{right:20px}.ark-sound{width:20px;height:20px;left:-4px}}
 @media (prefers-reduced-motion:reduce){.ark-bubble{transition:none}.ark-sprite{transition:none}}
 html,body{overflow-x:hidden}
