@@ -17,16 +17,29 @@ document.addEventListener('DOMContentLoaded', () => {
   const ASSET = 'assets/mascot/';
   const VOICE_ASSET_DIR = `${ASSET}voice/`;
   const FRAME_COUNT = 20;
-  const RELAX_FRAMES = Array.from({ length: FRAME_COUNT }, (_, index) => `amiya_relax_${String(index + 1).padStart(2, '0')}.png`);
-  const makeFrames = (prefix) => Array.from({ length: FRAME_COUNT }, (_, index) => `${prefix}${String(index + 1).padStart(2, '0')}.png`);
+
+  // 1. 智能格式检测：优先使用 WebP（体积骤降 74%，单帧仅 22KB，解码极速且不丢帧）
+  const canUseWebP = (() => {
+    try {
+      const elem = document.createElement('canvas');
+      if (elem.getContext && elem.getContext('2d')) {
+        return elem.toDataURL('image/webp').indexOf('data:image/webp') === 0;
+      }
+    } catch (e) {}
+    return true;
+  })();
+  const IMG_EXT = canUseWebP ? '.webp' : '.png';
+
+  const RELAX_FRAMES = Array.from({ length: FRAME_COUNT }, (_, index) => `amiya_relax_${String(index + 1).padStart(2, '0')}${IMG_EXT}`);
+  const makeFrames = (prefix) => Array.from({ length: FRAME_COUNT }, (_, index) => `${prefix}${String(index + 1).padStart(2, '0')}${IMG_EXT}`);
   const ACTIONS = Object.freeze({
     interact_wave: { frames: makeFrames('amiya_interact_'), duration: 1000, tone: 1 },
     interact_step_a: { frames: makeFrames('amiya_interact_step_a_'), duration: 1133.3333253860474, tone: 2 },
     interact_step_b: { frames: makeFrames('amiya_interact_step_b_'), duration: 1133.3333253860474, tone: 3 },
   });
-  const ACTION_TAIL = 'amiya_relax_01.png';
-  const STATIC_IDLE_FRAME = 'amiya_relax_01.png';
-  const STATIC_ACTION_FRAME = 'amiya_interact_01.png';
+  const ACTION_TAIL = `amiya_relax_01${IMG_EXT}`;
+  const STATIC_IDLE_FRAME = `amiya_relax_01${IMG_EXT}`;
+  const STATIC_ACTION_FRAME = `amiya_interact_01${IMG_EXT}`;
   const IDLE_FRAME_MS = 50;
   const ACTION_TAIL_MS = 90;
   const LONG_IDLE_MS = 60 * 1000;
@@ -36,7 +49,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const CHAOS_COOLDOWN_MS = 9000;
   const AWAY_NOTICE_COOLDOWN_MS = 55 * 1000;
   const VOICE_COOLDOWN_MS = 2200;
-  const MASCOT_HTML = '<img class="ark-sprite ark-sprite-idle" src="assets/mascot/amiya_relax_01.png" alt="阿米娅Q版小人" draggable="false"><img class="ark-sprite ark-sprite-action" src="assets/mascot/amiya_interact_01.png" alt="" draggable="false" aria-hidden="true" hidden>';
+  const MASCOT_HTML = `<img class="ark-sprite ark-sprite-idle" src="assets/mascot/amiya_relax_01${IMG_EXT}" alt="阿米娅Q版小人" draggable="false"><img class="ark-sprite ark-sprite-action" src="assets/mascot/amiya_interact_01${IMG_EXT}" alt="" draggable="false" aria-hidden="true" hidden>`;
 
   const CLICK_LINES = [
     '博士，欢迎回来。今天的行程我已经整理好了。','嗯，我在。有什么任务尽管交给我吧。','请放心，罗德岛会一直陪在博士身边。','博士的指挥很可靠，我也要再认真一点。','工作告一段落的话，记得喝一口水哦。','这次行动的资料，我再核对一遍。','今天也一起把该完成的事做好吧。','理智恢复得差不多了，要不要稍微休息一下？','博士，需要我为您准备行动方案吗？','虽然会紧张……但我会努力跟上博士。','甲板上的风很舒服，忙完可以去走走。','我相信博士的判断，也相信大家。','别把所有事都一个人扛着，可以叫上我。','今天的罗德岛也很平稳，真是太好了。','资料已经分类完成，随时可以查看。','博士，眼睛累了就看远处一会儿吧。','我会把每一次托付都认真记下来。','就算是小小的一步，也是在向前走。','那、那个……被博士点到名，我很高兴。','请把接下来的任务也交给我吧。','大家都在努力，博士也别太勉强自己。','今天的目标，和博士一起完成。','报告：小队状态良好，可以随时出发。','博士的到来，让这里安心了很多。'
@@ -130,8 +143,81 @@ document.addEventListener('DOMContentLoaded', () => {
         try { localStorage.setItem(key, value); } catch (error) { /* file:// 或隐私模式可能禁用存储。 */ }
       },
     };
-    const preloadFrames = [...new Set([STATIC_IDLE_FRAME, STATIC_ACTION_FRAME, ACTION_TAIL, ...RELAX_FRAMES, ...Object.values(ACTIONS).flatMap((action) => action.frames)])];
-    preloadFrames.forEach((frame) => { const image = new Image(); image.decoding = 'async'; image.src = ASSET + frame; });
+    // 1. 高频原声预热缓存池：页面初载即刻预加载高频问候，杜绝“立绘加载阶段没声音”
+    const preheatedAudio = new Map();
+    const warmAudioSources = [
+      'assets/mascot/voice/official_cn_042.mp3', // 欢迎回家，博士！
+      'assets/mascot/voice/official_cn_022.mp3', // 博士，我在这里。
+      'assets/mascot/voice/official_cn_034.mp3', // 欸？博士？
+      'assets/mascot/voice/official_cn_033.mp3', // 有什么想喝的吗，博士？
+    ];
+    warmAudioSources.forEach((src) => {
+      try {
+        const audio = new Audio();
+        audio.preload = 'auto';
+        audio.src = src;
+        preheatedAudio.set(src, audio);
+      } catch (error) {}
+    });
+
+    // 2. 图像预加载门禁机制 (Preload Gate)
+    // 杜绝 80 张大图并发堵死网络连接，杜绝未解码完成就开启 50ms 切帧导致丢帧掉帧
+    let idleFramesReady = false;
+    const decodedFrameCache = new Set();
+
+    const decodeFrame = (framePath) => {
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.decoding = 'async';
+        img.onload = () => {
+          if (typeof img.decode === 'function') {
+            img.decode().then(() => {
+              decodedFrameCache.add(framePath);
+              resolve(true);
+            }).catch(() => {
+              decodedFrameCache.add(framePath);
+              resolve(true);
+            });
+          } else {
+            decodedFrameCache.add(framePath);
+            resolve(true);
+          }
+        };
+        img.onerror = () => resolve(false);
+        img.src = ASSET + framePath;
+      });
+    };
+
+    // 第一阶段：优先只预加载 20 帧待机动画（WebP 仅约 440KB，极速就绪）
+    Promise.all(RELAX_FRAMES.map(decodeFrame)).then(() => {
+      idleFramesReady = true;
+      if (!document.hidden && state.phase === 'idle' && !REDUCED_MOTION.matches) {
+        runIdle();
+      }
+      // 第二阶段：待机动画丝滑播放后，在浏览器空闲时分批预热动作帧，完全不抢占首屏资源
+      startActionFramesPreload();
+    });
+
+    const startActionFramesPreload = () => {
+      const actionBatches = [
+        ACTIONS.interact_wave.frames,    // 挥手动作
+        ACTIONS.interact_step_a.frames, // 欢快踏步 A
+        ACTIONS.interact_step_b.frames, // 欢快踏步 B
+      ];
+      let currentBatchIdx = 0;
+      const processNextBatch = () => {
+        if (currentBatchIdx >= actionBatches.length) return;
+        const batch = actionBatches[currentBatchIdx++];
+        Promise.all(batch.map(decodeFrame)).then(() => {
+          setTimeout(processNextBatch, 150);
+        });
+      };
+      if (typeof window.requestIdleCallback === 'function') {
+        window.requestIdleCallback(() => processNextBatch(), { timeout: 1200 });
+      } else {
+        setTimeout(processNextBatch, 350);
+      }
+    };
 
     let count = Math.max(0, Number.parseInt(storage.get('ark_pokes', '0'), 10) || 0);
     let muted = storage.get('ark_muted', '0') === '1';
@@ -207,6 +293,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const runIdle = () => {
       stopIdle();
       if (REDUCED_MOTION.matches || document.hidden || state.phase === 'action') return;
+      // 关键门禁：在待机 20 帧未全部解码就绪前，展示首帧静态立绘，绝不在网络加载中切帧导致丢帧卡顿！
+      if (!idleFramesReady) {
+        showIdle(STATIC_IDLE_FRAME);
+        return;
+      }
       const start = () => {
         if (document.hidden || state.phase === 'action') return;
         state.idleIndex = 0;
@@ -260,6 +351,14 @@ document.addEventListener('DOMContentLoaded', () => {
         audioObj.addEventListener('ended', onAudioDone, { once: true });
         audioObj.addEventListener('pause', onAudioDone, { once: true });
         audioObj.addEventListener('error', onAudioDone, { once: true });
+        if (audioObj.duration && Number.isFinite(audioObj.duration) && audioObj.duration > 0) {
+          setTimeout(() => {
+            if (token === state.voiceToken && !audioFinished) {
+              audioFinished = true;
+              tryHide();
+            }
+          }, Math.ceil(audioObj.duration * 1000) + 1200);
+        }
       }
 
       if (REDUCED_MOTION.matches) {
@@ -397,27 +496,45 @@ document.addEventListener('DOMContentLoaded', () => {
       if (muted || !entry) return null;
       stopVoice();
       const token = state.voiceToken;
-      try { voiceAudio = voiceAudio || new Audio(); } catch (error) { return null; }
       const candidateSources = (Array.isArray(entry.sources) && entry.sources.length ? entry.sources : [entry.src]).filter(isLocalVoiceAsset);
       if (!candidateSources.length) return null;
       const voiceId = entry.id || candidateSources[0];
+
+      // 优先从预热池获取就绪实例（实现首触即响、零等待、立绘初载也有声音）
+      let targetAudio = null;
+      for (const src of candidateSources) {
+        if (preheatedAudio.has(src)) {
+          targetAudio = preheatedAudio.get(src);
+          break;
+        }
+      }
+      if (!targetAudio) {
+        try { voiceAudio = voiceAudio || new Audio(); targetAudio = voiceAudio; } catch (error) { return null; }
+      } else {
+        voiceAudio = targetAudio;
+      }
+
       let sourceIndex = 0;
 
       const tryPlay = () => {
         if (token !== state.voiceToken) return;
         try {
-          voiceAudio.preload = 'auto';
+          targetAudio.preload = 'auto';
           const volume = Number(entry.volume);
-          voiceAudio.volume = Number.isFinite(volume) ? Math.min(1, Math.max(0, volume)) : 0.78;
-          voiceAudio.src = candidateSources[sourceIndex];
-          voiceAudio.onerror = () => {
+          targetAudio.volume = Number.isFinite(volume) ? Math.min(1, Math.max(0, volume)) : 0.8;
+          const targetUrl = new URL(candidateSources[sourceIndex], window.location.href).href;
+          if (targetAudio.src !== targetUrl) {
+            targetAudio.src = candidateSources[sourceIndex];
+          }
+          try { targetAudio.currentTime = 0; } catch (e) {}
+          targetAudio.onerror = () => {
             if (token !== state.voiceToken) return;
             if (sourceIndex < candidateSources.length - 1) {
               sourceIndex += 1;
               tryPlay();
             }
           };
-          const result = voiceAudio.play();
+          const result = targetAudio.play();
           if (result && typeof result.catch === 'function') {
             result.catch(() => {
               if (token !== state.voiceToken) return;
@@ -435,7 +552,7 @@ document.addEventListener('DOMContentLoaded', () => {
         state.lastVoiceId = voiceId;
         rememberVoiceLine(line);
         tryPlay();
-        return voiceAudio;
+        return targetAudio;
       } catch (error) {
         state.lastVoiceAt = 0;
         state.lastVoiceId = '';
@@ -622,6 +739,15 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!voiceEntry) {
         voiceEntry = pickVoiceAsset(actionKey);
         if (voiceEntry) line = getEntryLine(voiceEntry);
+      }
+
+      // 杜绝立绘加载阶段没声音：若尚未全部就绪或首次点击，优先采用已在内存预热的高频官方原声（零延迟秒发声）
+      if ((!idleFramesReady || count <= 1) && (!voiceEntry || !preheatedAudio.has(voiceEntry.src))) {
+        const preheatedEntry = (voiceCatalog[actionKey] || voiceCatalog.interact_wave || []).find((e) => preheatedAudio.has(e.src));
+        if (preheatedEntry) {
+          voiceEntry = preheatedEntry;
+          line = getEntryLine(voiceEntry);
+        }
       }
 
       if (!line) line = selectInteractionLine(clickType);
