@@ -2,10 +2,10 @@
 ==================
 
 连续动画帧
-- 文件：amiya_relax_01.png … amiya_relax_20.png、amiya_interact_01.png … amiya_interact_20.png、amiya_interact_step_a_01.png … amiya_interact_step_a_20.png、amiya_interact_step_b_01.png … amiya_interact_step_b_20.png
+- 文件：amiya_relax_01.png … amiya_relax_20.png、amiya_interact_01.png … amiya_interact_20.png、amiya_interact_step_a_01.png … amiya_interact_step_a_20.png、amiya_interact_step_b_01.png … amiya_interact_step_b_20.png、sheet_sit.webp
 - 来源：Ark-Models 固定提交 https://github.com/isHarryh/Ark-Models/tree/3745e5c6e10b5252b2a5e1f1841ebef62b7ef15b/models/002_amiya
-- 内容：同一 `002_amiya` Spine 3.8 模型的 `Relax`、`Interact` 和 `Move` 时间轴真实采样帧
-- 渲染：统一 314×460 透明 RGBA 画布和固定 fit；无 AI 插值或重绘
+- 内容：同一 `002_amiya` Spine 3.8 模型的 `Relax`、`Interact`、`Move` 和 `Sit` 时间轴真实采样帧；`Sit` 仅用于拖动持握
+- 渲染：统一 314×460 透明 RGBA 画布；点击动作为固定 fit；Sit 在相同 scale 下上移以对齐头顶；无 AI 插值或重绘
 
 旧单帧
 - 文件：amiya_idle.png、amiya_hi.png

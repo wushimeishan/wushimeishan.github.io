@@ -9,26 +9,67 @@
 *::-webkit-scrollbar-track{background:#0c0f19}
 *::-webkit-scrollbar-thumb{background:#11303a;border:1px solid var(--ark)}
 .ark-gold{color:var(--ark-gold)}
-.ark-mascot{position:fixed;right:24px;bottom:16px;z-index:90;width:124px;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent;touch-action:manipulation;isolation:isolate}
+.ark-mascot{position:fixed;right:24px;bottom:16px;z-index:90;width:124px;cursor:grab;user-select:none;-webkit-user-drag:none;-webkit-tap-highlight-color:transparent;touch-action:none;isolation:isolate}
+.ark-mascot.is-placed{right:auto;bottom:auto}
+.ark-mascot.is-dragging{cursor:grabbing;z-index:120}
+.ark-mascot.is-settling .ark-bob{transition:transform .32s cubic-bezier(.2,1.35,.32,1)}
+body.ark-dragging{cursor:grabbing;user-select:none}
 .ark-bob{width:100%}
 .ark-stage{position:relative;width:100%;aspect-ratio:314/460}
-.ark-stage::after{content:"";position:absolute;left:14%;right:14%;bottom:-4px;height:12px;border-radius:50%;background:radial-gradient(ellipse at center,rgba(47,196,214,.28),transparent 70%);filter:blur(1px)}
+.ark-stage::after{content:"";position:absolute;left:14%;right:14%;bottom:-4px;height:12px;border-radius:50%;background:radial-gradient(ellipse at center,rgba(47,196,214,.28),transparent 70%);filter:blur(1px);transition:opacity .18s ease}
 .ark-sprite{position:absolute;inset:0;width:100%;height:100%;display:block;object-fit:contain;filter:drop-shadow(0 6px 10px rgba(0,0,0,.5));image-rendering:auto}
 .ark-sprite[hidden]{display:none}
 .ark-stage:focus-visible{outline:2px solid var(--ark);outline-offset:4px}
 .ark-mascot:hover .ark-sprite{filter:drop-shadow(0 6px 16px rgba(47,196,214,.45))}
+.ark-mascot.is-dragging:not(.is-collapsed) .ark-bob{
+  transform-origin:50% 12%;
+  transform:translate3d(0,-10px,0) rotate(var(--ark-swing,0deg)) scale(1.04);
+}
+.ark-mascot.is-dragging .ark-stage::after{opacity:0}
+.ark-mascot.is-dragging .ark-tag{opacity:0}
+.ark-mascot.is-dragging .ark-stage::before{
+  content:"";
+  position:absolute;
+  left:50%;
+  top:3%;
+  z-index:3;
+  width:14px;
+  height:10px;
+  margin-left:-7px;
+  border:2px solid var(--ark);
+  border-bottom:0;
+  border-radius:8px 8px 0 0;
+  box-shadow:0 0 10px rgba(47,196,214,.55);
+  pointer-events:none;
+}
+.ark-mascot.is-dragging .ark-sprite{filter:drop-shadow(10px 26px 16px rgba(0,0,0,.48)) drop-shadow(0 0 10px rgba(47,196,214,.35))}
+.ark-mascot.is-collapsed.is-dragging{
+  transform-origin:50% 18%;
+  transform:translateY(-8px) rotate(var(--ark-swing,0deg)) scale(1.08);
+}
 .ark-bubble{position:absolute;right:0;bottom:calc(100% - 2px);transform:translateY(8px);width:min(230px,calc(100vw - 24px));max-width:calc(100vw - 24px);background:var(--ark-ink);border:1px solid var(--ark);box-shadow:0 0 20px rgba(47,196,214,.22);padding:9px 13px;font:11px/1.6 var(--mono);color:var(--text);opacity:0;visibility:hidden;transition:opacity .22s ease,transform .22s ease;pointer-events:none;text-align:center;overflow-wrap:anywhere;word-break:break-word;white-space:normal}
 .ark-bubble.show{opacity:1;visibility:visible;transform:translateY(0)}
 .ark-bubble::before{content:"";position:absolute;top:100%;right:28px;border:6px solid transparent;border-top-color:var(--ark)}
+.ark-mascot.bubble-end .ark-bubble{right:auto;left:0}
+.ark-mascot.bubble-end .ark-bubble::before{right:auto;left:28px}
+.ark-mascot.bubble-below .ark-bubble{bottom:auto;top:calc(100% + 4px);transform:translateY(-8px)}
+.ark-mascot.bubble-below .ark-bubble.show{transform:translateY(0)}
+.ark-mascot.bubble-below .ark-bubble::before{top:auto;bottom:100%;border-top-color:transparent;border-bottom-color:var(--ark)}
 .ark-bubble .ark-caret{color:var(--ark);animation:blink 1s steps(2,end) infinite}
 .ark-tag{text-align:center;font:8px/1 var(--mono);letter-spacing:.22em;color:var(--ark);margin-top:2px;opacity:.85;text-shadow:0 0 8px rgba(47,196,214,.6)}
-.ark-sound{position:absolute;top:-4px;left:-8px;width:23px;height:23px;display:grid;place-items:center;background:var(--ark-ink);border:1px solid var(--line);color:var(--ark);font-size:11px;line-height:1;cursor:pointer;padding:0;transition:.2s}
+.ark-sound{position:absolute;top:-4px;left:-8px;width:23px;height:23px;display:grid;place-items:center;background:var(--ark-ink);border:1px solid var(--line);color:var(--ark);font-size:11px;line-height:1;cursor:pointer;padding:0;transition:.2s;touch-action:manipulation}
 .ark-sound:hover{border-color:var(--ark);box-shadow:0 0 10px rgba(47,196,214,.4)}
 .ark-sound.is-off{color:var(--muted)}
 .ark-particle{position:fixed;width:8px;height:8px;pointer-events:none;z-index:99;transform:rotate(45deg);animation:ark-burst .72s ease-out forwards}
 @keyframes ark-burst{to{transform:translate(var(--dx),var(--dy)) rotate(240deg) scale(.15);opacity:0}}
-@media(max-width:760px){.ark-mascot{width:88px;right:12px;bottom:10px}.ark-bubble{width:min(184px,calc(100vw - 24px));max-width:calc(100vw - 24px);font-size:10px;padding:8px 10px}.ark-bubble::before{right:20px}.ark-sound{width:20px;height:20px;left:-4px}}
-@media (prefers-reduced-motion:reduce){.ark-bubble{transition:none}.ark-sprite{transition:none}}
+@media(max-width:760px){.ark-mascot{width:88px;right:12px;bottom:10px}.ark-mascot.is-placed{right:auto;bottom:auto}.ark-bubble{width:min(184px,calc(100vw - 24px));max-width:calc(100vw - 24px);font-size:10px;padding:8px 10px}.ark-bubble::before{right:20px}.ark-mascot.bubble-end .ark-bubble::before{left:20px}.ark-sound{width:20px;height:20px;left:-4px}}
+@media (prefers-reduced-motion:reduce){
+  .ark-bubble{transition:none}
+  .ark-sprite{transition:none}
+  .ark-mascot.is-dragging:not(.is-collapsed) .ark-bob{transform:translate3d(0,-8px,0)}
+  .ark-mascot.is-collapsed.is-dragging{transform:translateY(-4px)}
+  .ark-mascot.is-settling .ark-bob{transition:none}
+}
 html,body{overflow-x:clip}
 
 /* layout clearance, menu overlay, mascot loading / collapse */
@@ -45,14 +86,16 @@ body.nav-open{overflow:hidden}
 .ark-mascot.is-loading{opacity:.72}
 .ark-mascot.is-loading .ark-tag{letter-spacing:.12em}
 .ark-live{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
-.ark-hide{position:absolute;top:-4px;right:-8px;width:23px;height:23px;display:grid;place-items:center;background:var(--ark-ink);border:1px solid var(--line);color:var(--ark);font:12px/1 var(--mono);cursor:pointer;padding:0;z-index:2}
+.ark-hide{position:absolute;top:-4px;right:-8px;width:23px;height:23px;display:grid;place-items:center;background:var(--ark-ink);border:1px solid var(--line);color:var(--ark);font:12px/1 var(--mono);cursor:pointer;padding:0;z-index:2;touch-action:manipulation}
 .ark-hide:hover{border-color:var(--ark)}
-.ark-mascot.is-collapsed{width:52px;height:52px;right:12px;bottom:12px;cursor:pointer}
+.ark-mascot.is-collapsed{width:52px;height:52px;cursor:grab}
+.ark-mascot.is-collapsed:not(.is-placed){right:12px;bottom:12px}
 .ark-mascot.is-collapsed .ark-bob,
 .ark-mascot.is-collapsed .ark-tag,
 .ark-mascot.is-collapsed .ark-sound,
 .ark-mascot.is-collapsed .ark-bubble{display:none}
-.ark-mascot.is-collapsed .ark-hide{position:static;width:52px;height:52px;right:auto;top:auto;border-color:var(--ark);background:#0c0f19 url("../assets/mascot/amiya_relax_01.webp") center/contain no-repeat;font-size:0;overflow:hidden}
+.ark-mascot.is-collapsed .ark-hide{position:static;width:52px;height:52px;right:auto;top:auto;border-color:var(--ark);background:#0c0f19 url("../assets/mascot/amiya_relax_01.webp") center/contain no-repeat;font-size:0;overflow:hidden;cursor:grab;touch-action:none}
+.ark-mascot.is-collapsed.is-dragging .ark-hide{cursor:grabbing}
 .ark-mascot.is-collapsed .ark-hide::after{content:"阿米娅";display:block;position:absolute;left:0;right:0;bottom:3px;font:8px/1 var(--mono);color:var(--ark);text-align:center;font-size:8px}
 @media(max-width:760px){
   .nav-backdrop.show{display:block}
@@ -70,4 +113,6 @@ body.nav-open{overflow:hidden}
   .brand-cursor,.blink,.ark-bubble .ark-caret{animation:none}
   .focus-card:hover,.button-primary:hover{transform:none}
   .ark-particle{display:none}
+  .ark-mascot.is-dragging:not(.is-collapsed) .ark-bob{transform:translate3d(0,-8px,0)}
+  .ark-mascot.is-collapsed.is-dragging{transform:translateY(-4px)}
 }

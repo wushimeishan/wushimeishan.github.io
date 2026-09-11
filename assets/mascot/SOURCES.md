@@ -21,10 +21,11 @@
 | `amiya_interact_01.png` … `amiya_interact_20.png` | `Interact`，`1.0 s` | `t = 0, 0.05, …, 0.95 s`；`01 → … → 20 → relax_01` |
 | `amiya_interact_step_a_01.png` … `amiya_interact_step_a_20.png` | `Move`，`1.1333333253860474 s` | `t = 0 + i × duration/20`；`01 → … → 20 → relax_01` |
 | `amiya_interact_step_b_01.png` … `amiya_interact_step_b_20.png` | `Move`，`1.1333333253860474 s` | `t = (0.5 × duration + i × duration/20) mod duration`；`01 → … → 20 → relax_01` |
+| `sheet_sit.webp`（20 帧） | `Sit`，`8.0 s` | `t = 0, 0.4, …, 7.6 s`；拖动期间 `01 → … → 20 → 01` |
 
 其中 `i=0…19`。`interact_step_a` 与 `interact_step_b` 是同一 `Move` 时间轴的两个真实相位，分别让不同脚先行，产生不同的脚步和重心顺序；不是复制、镜像、CSS 位移或 AI 生成动作。每段播放的最后一个 `relax_01` 使用上述同一张 Relax 帧，页面完成 action 后再切回 idle `img`。
 
-本模型还包含 `Sit` 与 `Sleep` 动画，但没有作为点击序列提交：在共享 fit 下 `Sit` 的可见底部比站立 `Relax` 低约 75px，直接接回站立姿态会产生地面跳变；`Sleep` 为横躺姿态，也没有同一条原始时间轴提供回到站立 Relax 的连续恢复段。保留它们会违反本组件的固定原点和自然回落要求。
+本模型还包含 `Sit` 与 `Sleep` 动画。`Sleep` 仍未作为序列提交：横躺姿态没有同一条原始时间轴提供回到站立 Relax 的连续恢复段。`Sit` 仅用于拖动持握，不进入点击动作：共享 fit 下其可见底部比站立 `Relax` 低约 93px，直接接回站立会跳变；拖动图集因此在相同 scale / visualCenterX 下将骨架上移 `yShift≈93.51px`，使坐姿头顶与站立头顶对齐，并保持在 `314×460` 画布内。无 AI 插值或重绘。
 
 ## 旧单帧素材的隔离用途
 

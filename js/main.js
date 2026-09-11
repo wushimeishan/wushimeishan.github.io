@@ -48,6 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
     interact_wave: `${ASSET}sheet_interact_wave.webp`,
     interact_step_a: `${ASSET}sheet_interact_step_a.webp`,
     interact_step_b: `${ASSET}sheet_interact_step_b.webp`,
+    sit: `${ASSET}sheet_sit.webp`,
   });
   const STATIC_FIRST_FRAME = `${ASSET}amiya_relax_01.webp`;
 
@@ -58,6 +59,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   const IDLE_FRAME_MS = 50;
+  const SIT_FRAME_MS = 100;
   const ACTION_TAIL_MS = 80;
   const LONG_IDLE_MS = 60 * 1000;
   const SHORT_REPEAT_GAP_MS = 850;
@@ -120,8 +122,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const root = document.createElement('aside');
     root.id = 'ark-mascot';
     root.className = 'ark-mascot is-loading';
-    root.setAttribute('aria-label', '罗德岛小干员');
-    root.innerHTML = '<div class="ark-live" id="ark-live" aria-live="polite"></div><div class="ark-bubble" id="ark-bubble" role="presentation"></div><div class="ark-bob"><div class="ark-stage" id="ark-stage" role="button" tabindex="0" aria-label="与阿米娅互动"><canvas class="ark-sprite ark-canvas" id="ark-canvas" width="314" height="460" aria-hidden="true"></canvas></div></div><div class="ark-tag">RHODES ISLAND</div><button class="ark-sound" id="ark-sound" type="button" aria-label="开关语音和点击音效" title="开关语音和点击音效" aria-pressed="true">♪</button><button class="ark-hide" id="ark-hide" type="button" aria-label="收起阿米娅" title="收起阿米娅">–</button>';
+    root.setAttribute('aria-label', '罗德岛小干员，可拖动');
+    root.innerHTML = '<div class="ark-live" id="ark-live" aria-live="polite"></div><div class="ark-bubble" id="ark-bubble" role="presentation"></div><div class="ark-bob"><div class="ark-stage" id="ark-stage" role="button" tabindex="0" aria-label="与阿米娅互动，拖动可移动位置"><canvas class="ark-sprite ark-canvas" id="ark-canvas" width="314" height="460" aria-hidden="true"></canvas></div></div><div class="ark-tag">RHODES ISLAND</div><button class="ark-sound" id="ark-sound" type="button" aria-label="开关语音和点击音效" title="开关语音和点击音效" aria-pressed="true">♪</button><button class="ark-hide" id="ark-hide" type="button" aria-label="收起阿米娅" title="收起阿米娅">–</button>';
     document.body.appendChild(root);
 
     const stage = root.querySelector('#ark-stage');
@@ -149,8 +151,25 @@ document.addEventListener('DOMContentLoaded', () => {
     const sheets = {};
     let firstFrame = null;
     let idleFramesReady = false;
+    let sitFramesReady = false;
     let rafId = null;
     let collapsed = storage.get('ark_hidden', '0') === '1';
+    const DRAG_THRESHOLD_SQ = 64;
+    const drag = {
+      pointerId: null,
+      startX: 0,
+      startY: 0,
+      originLeft: 0,
+      originTop: 0,
+      lastX: 0,
+      lastT: 0,
+      swing: 0,
+      moved: false,
+    };
+    let suppressClick = false;
+    let suppressClickTimer = 0;
+    let settleTimer = 0;
+    let lastPickupVoiceAt = 0;
 
     const stopLoop = () => {
       if (rafId) cancelAnimationFrame(rafId);
@@ -247,6 +266,8 @@ document.addEventListener('DOMContentLoaded', () => {
       recentVoiceLines: [],
       voiceToken: 0,
       interacted: false,
+      dragging: false,
+      sitIndex: 0,
     };
 
     const clearSpeechTimers = () => {
@@ -261,9 +282,36 @@ document.addEventListener('DOMContentLoaded', () => {
       actionTimer = null;
     };
 
+    const runSit = () => {
+      stopLoop();
+      const key = sitFramesReady ? 'sit' : 'relax';
+      if (collapsed || !state.dragging || document.hidden) {
+        drawFrame(key, sitFramesReady ? state.sitIndex : 0);
+        return;
+      }
+      if (REDUCED_MOTION.matches || !sitFramesReady) {
+        drawFrame(key, 0);
+        return;
+      }
+      let last = performance.now();
+      let acc = 0;
+      const tick = (now) => {
+        if (collapsed || !state.dragging || document.hidden) return;
+        acc += now - last;
+        last = now;
+        while (acc >= SIT_FRAME_MS) {
+          acc -= SIT_FRAME_MS;
+          state.sitIndex = (state.sitIndex + 1) % FRAME_COUNT;
+        }
+        drawFrame('sit', state.sitIndex);
+        rafId = requestAnimationFrame(tick);
+      };
+      rafId = requestAnimationFrame(tick);
+    };
+
     const runIdle = () => {
       stopLoop();
-      if (collapsed || REDUCED_MOTION.matches || document.hidden || state.phase === 'action') {
+      if (collapsed || state.dragging || REDUCED_MOTION.matches || document.hidden || state.phase === 'action') {
         drawFrame('relax', idleFramesReady ? state.idleIndex : 0);
         return;
       }
@@ -274,7 +322,7 @@ document.addEventListener('DOMContentLoaded', () => {
       let last = performance.now();
       let acc = 0;
       const tick = (now) => {
-        if (collapsed || document.hidden || state.phase === 'action') return;
+        if (collapsed || state.dragging || document.hidden || state.phase === 'action') return;
         acc += now - last;
         last = now;
         while (acc >= IDLE_FRAME_MS) {
@@ -576,6 +624,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const playAction = (actionKey) => {
+      if (state.dragging) return;
       const action = ACTIONS[actionKey] || ACTIONS.interact_wave;
       stopLoop();
       clearActionTimer();
@@ -664,6 +713,84 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const restartIdleAndNotices = () => { runIdle(); scheduleIdleLines(); scheduleAway(); };
 
+    const readSavedPos = () => {
+      try {
+        const raw = storage.get('ark_pos', '');
+        if (!raw) return null;
+        const data = JSON.parse(raw);
+        if (!Number.isFinite(data.x) || !Number.isFinite(data.y)) return null;
+        return {
+          x: Math.max(0, Math.min(1, data.x)),
+          y: Math.max(0, Math.min(1, data.y)),
+        };
+      } catch (error) {
+        return null;
+      }
+    };
+
+    const clampPos = (left, top) => {
+      const margin = 4;
+      const width = root.offsetWidth || (collapsed ? 52 : 124);
+      const height = root.offsetHeight || (collapsed ? 52 : 200);
+      const maxX = Math.max(margin, window.innerWidth - width - margin);
+      const maxY = Math.max(margin, window.innerHeight - height - margin);
+      return {
+        left: Math.max(margin, Math.min(maxX, left)),
+        top: Math.max(margin, Math.min(maxY, top)),
+      };
+    };
+
+    const updateBubbleAnchor = () => {
+      const rect = root.getBoundingClientRect();
+      root.classList.toggle('bubble-below', rect.top < 96);
+      root.classList.toggle('bubble-end', rect.left < 48 || rect.left + rect.width < window.innerWidth * 0.45);
+    };
+
+    const applyPlacedPosition = (left, top) => {
+      const pos = clampPos(left, top);
+      root.classList.add('is-placed');
+      root.style.left = `${pos.left}px`;
+      root.style.top = `${pos.top}px`;
+      root.style.right = 'auto';
+      root.style.bottom = 'auto';
+      updateBubbleAnchor();
+      return pos;
+    };
+
+    const persistPosition = (pos) => {
+      const width = root.offsetWidth || 1;
+      const height = root.offsetHeight || 1;
+      const maxX = Math.max(1, window.innerWidth - width);
+      const maxY = Math.max(1, window.innerHeight - height);
+      storage.set('ark_pos', JSON.stringify({
+        x: Math.max(0, Math.min(1, pos.left / maxX)),
+        y: Math.max(0, Math.min(1, pos.top / maxY)),
+      }));
+    };
+
+    const restoreOrClampPosition = () => {
+      const saved = readSavedPos();
+      if (saved) {
+        const maxX = Math.max(0, window.innerWidth - (root.offsetWidth || 1));
+        const maxY = Math.max(0, window.innerHeight - (root.offsetHeight || 1));
+        applyPlacedPosition(saved.x * maxX, saved.y * maxY);
+        return;
+      }
+      if (root.classList.contains('is-placed')) {
+        const rect = root.getBoundingClientRect();
+        applyPlacedPosition(rect.left, rect.top);
+        return;
+      }
+      updateBubbleAnchor();
+    };
+
+    const isDragHandle = (target) => {
+      if (!(target instanceof Element)) return false;
+      if (target.closest('#ark-sound')) return false;
+      if (!collapsed && target.closest('#ark-hide')) return false;
+      return true;
+    };
+
     const applyCollapsed = () => {
       root.classList.toggle('is-collapsed', collapsed);
       hideButton.setAttribute('aria-label', collapsed ? '展开阿米娅' : '收起阿米娅');
@@ -683,6 +810,7 @@ document.addEventListener('DOMContentLoaded', () => {
         drawFrame('relax', idleFramesReady ? state.idleIndex : 0);
         runIdle();
       }
+      restoreOrClampPosition();
     };
 
     const activate = (event) => {
@@ -734,6 +862,128 @@ document.addEventListener('DOMContentLoaded', () => {
       scheduleAway();
     };
 
+    const setSwing = (deg) => {
+      drag.swing = deg;
+      root.style.setProperty('--ark-swing', `${deg.toFixed(2)}deg`);
+    };
+
+    const beginHeldPose = (event) => {
+      state.dragging = true;
+      state.actionToken += 1;
+      state.phase = 'idle';
+      state.actionKey = null;
+      stopLoop();
+      clearActionTimer();
+      state.sitIndex = 0;
+      drawFrame(sitFramesReady ? 'sit' : 'relax', 0);
+      root.classList.add('is-dragging');
+      root.classList.remove('is-settling');
+      document.body.classList.add('ark-dragging');
+      runSit();
+      burst(event.clientX, event.clientY);
+      const now = Date.now();
+      if (!muted && now - lastPickupVoiceAt > 2600) {
+        lastPickupVoiceAt = now;
+        const poke = (voiceCatalog.interact_wave || []).find((item) => item.id === 'amiya-poke');
+        const line = getEntryLine(poke) || '欸？博士？';
+        const aud = poke ? playVoice(poke, line) : null;
+        say(line, 1600, aud);
+      } else if (!muted) {
+        blip('interact_wave', 'single');
+      }
+    };
+
+    const finishDrag = (event) => {
+      if (drag.pointerId !== event.pointerId) return;
+      const moved = drag.moved;
+      if (moved) {
+        const left = Number.parseFloat(root.style.left);
+        const top = Number.parseFloat(root.style.top);
+        if (Number.isFinite(left) && Number.isFinite(top)) persistPosition(applyPlacedPosition(left, top));
+        else {
+          root.classList.remove('is-dragging');
+          const rect = root.getBoundingClientRect();
+          persistPosition(applyPlacedPosition(rect.left, rect.top));
+          root.classList.add('is-dragging');
+        }
+        suppressClick = true;
+        window.clearTimeout(suppressClickTimer);
+        suppressClickTimer = window.setTimeout(() => {
+          suppressClick = false;
+        }, 400);
+      }
+      state.dragging = false;
+      setSwing(0);
+      root.classList.remove('is-dragging');
+      document.body.classList.remove('ark-dragging');
+      if (moved && !REDUCED_MOTION.matches) {
+        root.classList.add('is-settling');
+        window.clearTimeout(settleTimer);
+        settleTimer = window.setTimeout(() => root.classList.remove('is-settling'), 340);
+      }
+      try {
+        if (root.hasPointerCapture?.(event.pointerId)) root.releasePointerCapture(event.pointerId);
+      } catch (error) { /* ignore */ }
+      drag.pointerId = null;
+      drag.moved = false;
+      if (moved && !collapsed) runIdle();
+    };
+
+    root.addEventListener('pointerdown', (event) => {
+      if (event.pointerType === 'mouse' && event.button !== 0) return;
+      if (!isDragHandle(event.target)) return;
+      const rect = root.getBoundingClientRect();
+      drag.pointerId = event.pointerId;
+      drag.startX = event.clientX;
+      drag.startY = event.clientY;
+      drag.originLeft = rect.left;
+      drag.originTop = rect.top;
+      drag.lastX = event.clientX;
+      drag.lastT = performance.now();
+      drag.moved = false;
+      setSwing(0);
+    });
+
+    window.addEventListener('pointermove', (event) => {
+      if (drag.pointerId !== event.pointerId) return;
+      const dx = event.clientX - drag.startX;
+      const dy = event.clientY - drag.startY;
+      if (!drag.moved) {
+        if ((dx * dx) + (dy * dy) < DRAG_THRESHOLD_SQ) return;
+        drag.moved = true;
+        suppressClick = true;
+        beginHeldPose(event);
+        try { root.setPointerCapture(event.pointerId); } catch (error) { /* ignore */ }
+      }
+      event.preventDefault();
+      const now = performance.now();
+      const dt = Math.max(8, now - drag.lastT);
+      const vx = (event.clientX - drag.lastX) / dt;
+      drag.lastX = event.clientX;
+      drag.lastT = now;
+      if (!REDUCED_MOTION.matches) {
+        const target = Math.max(-32, Math.min(32, vx * 180));
+        setSwing(drag.swing + (target - drag.swing) * 0.38);
+      }
+      applyPlacedPosition(drag.originLeft + dx, drag.originTop + dy);
+    }, { passive: false });
+
+    window.addEventListener('pointerup', finishDrag);
+    window.addEventListener('pointercancel', (event) => {
+      finishDrag(event);
+      suppressClick = false;
+      window.clearTimeout(suppressClickTimer);
+    });
+    root.addEventListener('dragstart', (event) => event.preventDefault());
+
+    root.addEventListener('click', (event) => {
+      if (!suppressClick) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      suppressClick = false;
+      window.clearTimeout(suppressClickTimer);
+    }, true);
+
     stage.addEventListener('click', activate);
     stage.addEventListener('keydown', (event) => {
       if (event.key !== 'Enter' && event.key !== ' ') return;
@@ -778,6 +1028,10 @@ document.addEventListener('DOMContentLoaded', () => {
         state.actionToken += 1;
         state.phase = 'idle';
         state.actionKey = null;
+        state.dragging = false;
+        setSwing(0);
+        root.classList.remove('is-dragging', 'is-settling');
+        document.body.classList.remove('ark-dragging');
         clearSpeechTimers();
         clearTimeout(idleLineTimer);
         clearTimeout(awayTimer);
@@ -793,7 +1047,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     window.addEventListener('pagehide', stopAudio);
     window.addEventListener('resize', () => {
-      if (syncCanvas()) drawFrame(state.actionKey || 'relax', state.idleIndex);
+      restoreOrClampPosition();
+      if (!syncCanvas()) return;
+      if (state.dragging) drawFrame(sitFramesReady ? 'sit' : 'relax', state.sitIndex);
+      else drawFrame(state.actionKey || 'relax', state.idleIndex);
     });
 
     const onMotionPreferenceChange = () => {
@@ -835,6 +1092,11 @@ document.addEventListener('DOMContentLoaded', () => {
         loadSheet('interact_wave', SPRITE_SHEETS.interact_wave),
         loadSheet('interact_step_a', SPRITE_SHEETS.interact_step_a),
         loadSheet('interact_step_b', SPRITE_SHEETS.interact_step_b),
+        loadSheet('sit', SPRITE_SHEETS.sit).then((image) => {
+          sitFramesReady = Boolean(image);
+          if (sitFramesReady && state.dragging && !collapsed) runSit();
+          return image;
+        }),
       ]).then(() => {
         if (!muted) preloadVoices();
       });
