@@ -16,7 +16,7 @@ window.ARK_MASCOT_VOICE_ASSETS = {
     {
       id: 'amiya-welcome',
       src: 'assets/mascot/voice/official_cn_042.mp3',
-      sources: ['assets/mascot/voice/official_cn_042.mp3', 'assets/mascot/voice/official_cn_042.wav'],
+      sources: ['assets/mascot/voice/official_cn_042.mp3'],
       types: ['single'],
       lines: ['欢迎回家，博士！'],
       weight: 6,
@@ -25,7 +25,7 @@ window.ARK_MASCOT_VOICE_ASSETS = {
     {
       id: 'amiya-here',
       src: 'assets/mascot/voice/official_cn_022.mp3',
-      sources: ['assets/mascot/voice/official_cn_022.mp3', 'assets/mascot/voice/official_cn_022.wav'],
+      sources: ['assets/mascot/voice/official_cn_022.mp3'],
       types: ['single'],
       lines: ['博士，我在这里。'],
       weight: 6,
@@ -34,7 +34,7 @@ window.ARK_MASCOT_VOICE_ASSETS = {
     {
       id: 'amiya-poke',
       src: 'assets/mascot/voice/official_cn_034.mp3',
-      sources: ['assets/mascot/voice/official_cn_034.mp3', 'assets/mascot/voice/official_cn_034.wav'],
+      sources: ['assets/mascot/voice/official_cn_034.mp3'],
       types: ['single', 'short-repeat', 'rapid'],
       lines: ['欸？博士？'],
       weight: 5,
@@ -43,7 +43,7 @@ window.ARK_MASCOT_VOICE_ASSETS = {
     {
       id: 'amiya-giggle',
       src: 'assets/mascot/voice/official_cn_036.mp3',
-      sources: ['assets/mascot/voice/official_cn_036.mp3', 'assets/mascot/voice/official_cn_036.wav'],
+      sources: ['assets/mascot/voice/official_cn_036.mp3'],
       types: ['single', 'short-repeat'],
       lines: ['欸嘿嘿……'],
       weight: 5,
@@ -52,7 +52,7 @@ window.ARK_MASCOT_VOICE_ASSETS = {
     {
       id: 'amiya-schedule',
       src: 'assets/mascot/voice/official_cn_003.mp3',
-      sources: ['assets/mascot/voice/official_cn_003.mp3', 'assets/mascot/voice/official_cn_003.wav'],
+      sources: ['assets/mascot/voice/official_cn_003.mp3'],
       types: ['single'],
       lines: ['罗德岛全舰正处于通常航行状态。博士，整理下航程信息吧？'],
       weight: 5,
@@ -61,7 +61,7 @@ window.ARK_MASCOT_VOICE_ASSETS = {
     {
       id: 'amiya-hardwork',
       src: 'assets/mascot/voice/official_cn_001.mp3',
-      sources: ['assets/mascot/voice/official_cn_001.mp3', 'assets/mascot/voice/official_cn_001.wav'],
+      sources: ['assets/mascot/voice/official_cn_001.mp3'],
       types: ['single'],
       lines: ['博士，您工作辛苦了。'],
       weight: 5,
@@ -70,7 +70,7 @@ window.ARK_MASCOT_VOICE_ASSETS = {
     {
       id: 'amiya-companion',
       src: 'assets/mascot/voice/official_cn_009.mp3',
-      sources: ['assets/mascot/voice/official_cn_009.mp3', 'assets/mascot/voice/official_cn_009.wav'],
+      sources: ['assets/mascot/voice/official_cn_009.mp3'],
       types: ['single', 'away'],
       lines: ['博士，我们的脚下，是一条漫长的道路……也许这是一次没有终点的旅行，但如果是和您一起，我觉得，非常幸福。'],
       weight: 4,
@@ -79,7 +79,7 @@ window.ARK_MASCOT_VOICE_ASSETS = {
     {
       id: 'amiya-ack',
       src: 'assets/mascot/voice/official_cn_017.mp3',
-      sources: ['assets/mascot/voice/official_cn_017.mp3', 'assets/mascot/voice/official_cn_017.wav'],
+      sources: ['assets/mascot/voice/official_cn_017.mp3'],
       types: ['single', 'short-repeat', 'rapid'],
       lines: ['嗯，我知道了。'],
       weight: 4,
@@ -92,7 +92,7 @@ window.ARK_MASCOT_VOICE_ASSETS = {
     {
       id: 'amiya-drink',
       src: 'assets/mascot/voice/official_cn_033.mp3',
-      sources: ['assets/mascot/voice/official_cn_033.mp3', 'assets/mascot/voice/official_cn_033.wav'],
+      sources: ['assets/mascot/voice/official_cn_033.mp3'],
       types: ['single', 'short-repeat'],
       lines: ['有什么想喝的吗，博士？'],
       weight: 6,
@@ -101,7 +101,7 @@ window.ARK_MASCOT_VOICE_ASSETS = {
     {
       id: 'amiya-idle-alert',
       src: 'assets/mascot/voice/official_cn_010.mp3',
-      sources: ['assets/mascot/voice/official_cn_010.mp3', 'assets/mascot/voice/official_cn_010.wav'],
+      sources: ['assets/mascot/voice/official_cn_010.mp3'],
       types: ['single', 'short-repeat'],
       lines: ['博士，您还有许多事情需要处理。现在还不能休息哦。'],
       weight: 6,
@@ -110,7 +110,7 @@ window.ARK_MASCOT_VOICE_ASSETS = {
     {
       id: 'amiya-rest',
       src: 'assets/mascot/voice/official_cn_031.mp3',
-      sources: ['assets/mascot/voice/official_cn_031.mp3', 'assets/mascot/voice/official_cn_031.wav'],
+      sources: ['assets/mascot/voice/official_cn_031.mp3'],
       types: ['single', 'short-repeat'],
       lines: ['博士，辛苦了！累了的话请休息一会儿吧。'],
       weight: 5,
@@ -119,7 +119,7 @@ window.ARK_MASCOT_VOICE_ASSETS = {
     {
       id: 'amiya-ready',
       src: 'assets/mascot/voice/official_cn_020.mp3',
-      sources: ['assets/mascot/voice/official_cn_020.mp3', 'assets/mascot/voice/official_cn_020.wav'],
+      sources: ['assets/mascot/voice/official_cn_020.mp3'],
       types: ['single', 'short-repeat'],
       lines: ['来了！大家，请做好战斗准备！'],
       weight: 4,
@@ -128,7 +128,7 @@ window.ARK_MASCOT_VOICE_ASSETS = {
     {
       id: 'amiya-depart',
       src: 'assets/mascot/voice/official_cn_019.mp3',
-      sources: ['assets/mascot/voice/official_cn_019.mp3', 'assets/mascot/voice/official_cn_019.wav'],
+      sources: ['assets/mascot/voice/official_cn_019.mp3'],
       types: ['single', 'short-repeat', 'rapid'],
       lines: ['行动开始！'],
       weight: 4,
@@ -137,7 +137,7 @@ window.ARK_MASCOT_VOICE_ASSETS = {
     {
       id: 'amiya-fulfill',
       src: 'assets/mascot/voice/official_cn_018.mp3',
-      sources: ['assets/mascot/voice/official_cn_018.mp3', 'assets/mascot/voice/official_cn_018.wav'],
+      sources: ['assets/mascot/voice/official_cn_018.mp3'],
       types: ['single'],
       lines: ['我不会辜负大家的。'],
       weight: 4,
@@ -146,7 +146,7 @@ window.ARK_MASCOT_VOICE_ASSETS = {
     {
       id: 'amiya-understood',
       src: 'assets/mascot/voice/official_cn_023.mp3',
-      sources: ['assets/mascot/voice/official_cn_023.mp3', 'assets/mascot/voice/official_cn_023.wav'],
+      sources: ['assets/mascot/voice/official_cn_023.mp3'],
       types: ['single', 'short-repeat', 'rapid'],
       lines: ['我知道了！'],
       weight: 4,
@@ -159,7 +159,7 @@ window.ARK_MASCOT_VOICE_ASSETS = {
     {
       id: 'amiya-focus',
       src: 'assets/mascot/voice/official_cn_002.mp3',
-      sources: ['assets/mascot/voice/official_cn_002.mp3', 'assets/mascot/voice/official_cn_002.wav'],
+      sources: ['assets/mascot/voice/official_cn_002.mp3'],
       types: ['single', 'short-repeat'],
       lines: ['凯尔希医生教导过我，工作的时候一定要保持全神贯注……嗯，全神贯注。'],
       weight: 6,
@@ -168,7 +168,7 @@ window.ARK_MASCOT_VOICE_ASSETS = {
     {
       id: 'amiya-trust-resolve',
       src: 'assets/mascot/voice/official_cn_029.mp3',
-      sources: ['assets/mascot/voice/official_cn_029.mp3', 'assets/mascot/voice/official_cn_029.wav'],
+      sources: ['assets/mascot/voice/official_cn_029.mp3'],
       types: ['single', 'short-repeat'],
       lines: ['无论多么艰难的任务，只要有博士在，就一定能完成，我一直这样坚信着！'],
       weight: 6,
@@ -177,7 +177,7 @@ window.ARK_MASCOT_VOICE_ASSETS = {
     {
       id: 'amiya-all-trust',
       src: 'assets/mascot/voice/official_cn_026.mp3',
-      sources: ['assets/mascot/voice/official_cn_026.mp3', 'assets/mascot/voice/official_cn_026.wav'],
+      sources: ['assets/mascot/voice/official_cn_026.mp3'],
       types: ['single', 'short-repeat'],
       lines: ['大家可都相信着我！'],
       weight: 5,
@@ -186,7 +186,7 @@ window.ARK_MASCOT_VOICE_ASSETS = {
     {
       id: 'amiya-guide',
       src: 'assets/mascot/voice/official_cn_004.mp3',
-      sources: ['assets/mascot/voice/official_cn_004.mp3', 'assets/mascot/voice/official_cn_004.wav'],
+      sources: ['assets/mascot/voice/official_cn_004.mp3'],
       types: ['single'],
       lines: ['作为罗德岛的领导者我还有很多不成熟的地方，希望您能更多地为我指明前进的方向。'],
       weight: 4,
@@ -195,7 +195,7 @@ window.ARK_MASCOT_VOICE_ASSETS = {
     {
       id: 'amiya-home',
       src: 'assets/mascot/voice/official_cn_005.mp3',
-      sources: ['assets/mascot/voice/official_cn_005.mp3', 'assets/mascot/voice/official_cn_005.wav'],
+      sources: ['assets/mascot/voice/official_cn_005.mp3'],
       types: ['single'],
       lines: ['虽然这可能是我一厢情愿的想法，但我希望罗德岛能成为大家的第二个故乡……'],
       weight: 4,
@@ -204,7 +204,7 @@ window.ARK_MASCOT_VOICE_ASSETS = {
     {
       id: 'amiya-protect',
       src: 'assets/mascot/voice/official_cn_007.mp3',
-      sources: ['assets/mascot/voice/official_cn_007.mp3', 'assets/mascot/voice/official_cn_007.wav'],
+      sources: ['assets/mascot/voice/official_cn_007.mp3'],
       types: ['single'],
       lines: ['有时候，我会想起寒冷的家乡，那里就连空气中都弥漫着铜锈的味道。相比之下罗德岛是如此的温暖。所以，为了守护好这里，我必须更加努力才行。'],
       weight: 4,
@@ -213,7 +213,7 @@ window.ARK_MASCOT_VOICE_ASSETS = {
     {
       id: 'amiya-violin',
       src: 'assets/mascot/voice/official_cn_008.mp3',
-      sources: ['assets/mascot/voice/official_cn_008.mp3', 'assets/mascot/voice/official_cn_008.wav'],
+      sources: ['assets/mascot/voice/official_cn_008.mp3'],
       types: ['single'],
       lines: ['嘿嘿，博士，悄悄告诉你一件事——我重新开始练小提琴了。'],
       weight: 4,
@@ -222,7 +222,7 @@ window.ARK_MASCOT_VOICE_ASSETS = {
     {
       id: 'amiya-clear',
       src: 'assets/mascot/voice/official_cn_024.mp3',
-      sources: ['assets/mascot/voice/official_cn_024.mp3', 'assets/mascot/voice/official_cn_024.wav'],
+      sources: ['assets/mascot/voice/official_cn_024.mp3'],
       types: ['single', 'short-repeat', 'rapid'],
       lines: ['了解。'],
       weight: 4,
@@ -240,7 +240,7 @@ window.ARK_MASCOT_PROMO_CONFIG = {
     {
       id: 'amiya-promo-report',
       src: 'assets/mascot/voice/official_cn_011.mp3',
-      sources: ['assets/mascot/voice/official_cn_011.mp3', 'assets/mascot/voice/official_cn_011.wav'],
+      sources: ['assets/mascot/voice/official_cn_011.mp3'],
       action: 'interact_wave',
       types: ['single', 'any'],
       lines: ['博士，能再见到您……真是太好了。今后我们同行的路还很长，所以，请您多多关照！'],
@@ -251,7 +251,7 @@ window.ARK_MASCOT_PROMO_CONFIG = {
     {
       id: 'amiya-promo-highdiff',
       src: 'assets/mascot/voice/official_cn_029.mp3',
-      sources: ['assets/mascot/voice/official_cn_029.mp3', 'assets/mascot/voice/official_cn_029.wav'],
+      sources: ['assets/mascot/voice/official_cn_029.mp3'],
       action: 'interact_wave',
       types: ['single', 'any'],
       lines: ['无论多么艰难的任务，只要有博士在，就一定能完成，我一直这样坚信着！'],

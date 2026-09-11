@@ -2,24 +2,47 @@ document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('[data-year]').forEach((element) => {
     element.textContent = new Date().getFullYear();
   });
+
   const toggle = document.querySelector('.menu-toggle');
   const nav = document.querySelector('.site-nav');
   if (!toggle || !nav) return;
-  toggle.addEventListener('click', () => {
-    const open = nav.classList.toggle('open');
+
+  const backdrop = document.createElement('div');
+  backdrop.className = 'nav-backdrop';
+  backdrop.hidden = true;
+  document.body.appendChild(backdrop);
+
+  const setMenu = (open) => {
+    nav.classList.toggle('open', open);
+    backdrop.hidden = !open;
+    backdrop.classList.toggle('show', open);
+    toggle.classList.toggle('is-open', open);
     toggle.setAttribute('aria-expanded', String(open));
+    toggle.setAttribute('aria-label', open ? '关闭导航' : '打开导航');
+    document.body.classList.toggle('nav-open', open);
+  };
+
+  toggle.addEventListener('click', () => setMenu(!nav.classList.contains('open')));
+  backdrop.addEventListener('click', () => setMenu(false));
+  nav.querySelectorAll('a').forEach((link) => {
+    link.addEventListener('click', () => setMenu(false));
   });
-  nav.querySelectorAll('a').forEach((link) => link.addEventListener('click', () => nav.classList.remove('open')));
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') setMenu(false);
+  });
+  window.addEventListener('resize', () => {
+    if (window.innerWidth > 760) setMenu(false);
+  });
 });
 
-/* ============== 明日方舟 Q版小干员（全站悬浮 · 点击互动 · Canvas极速图集引擎） ============== */
+/* ============== 明日方舟 Q版小干员（图集并行加载 · rAF · blob 音频） ============== */
 (() => {
   const ASSET = 'assets/mascot/';
   const VOICE_ASSET_DIR = `${ASSET}voice/`;
   const FRAME_COUNT = 20;
+  const FRAME_W = 314;
+  const FRAME_H = 460;
 
-  // 1. 图集（Sprite Sheet）资源：将 80 个碎片化网络请求合并为 4 张高性能 WebP 图集
-  // 彻底根治网络加载丢帧、HTTP 堵塞、DOM 切图闪烁，利用 Canvas GPU 硬件加速秒级切帧
   const SPRITE_SHEETS = Object.freeze({
     relax: `${ASSET}sheet_relax.webp`,
     interact_wave: `${ASSET}sheet_interact_wave.webp`,
@@ -43,8 +66,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const CHAOS_COOLDOWN_MS = 9000;
   const AWAY_NOTICE_COOLDOWN_MS = 55 * 1000;
 
-  const MASCOT_HTML = '<canvas class="ark-sprite ark-canvas" id="ark-canvas" width="314" height="460" aria-label="阿米娅Q版小人"></canvas>';
-
   const ACTION_WEIGHTS = Object.freeze({
     single: { interact_wave: 0.55, interact_step_a: 0.25, interact_step_b: 0.20 },
     'short-repeat': { interact_wave: 0.20, interact_step_a: 0.45, interact_step_b: 0.35 },
@@ -52,6 +73,10 @@ document.addEventListener('DOMContentLoaded', () => {
     away: { interact_wave: 0.55, interact_step_a: 0.20, interact_step_b: 0.25 },
     chaotic: { interact_wave: 0.35, interact_step_a: 0.35, interact_step_b: 0.30 },
   });
+
+  const PRELOAD_VOICE_IDS = Object.freeze([
+    'amiya-welcome', 'amiya-poke', 'amiya-giggle', 'amiya-here', 'amiya-ack',
+  ]);
 
   const REDUCED_MOTION = window.matchMedia('(prefers-reduced-motion: reduce)');
   const ALLOWED_AUDIO_EXT = /\.(ogg|mp3|wav|m4a|aac|webm)$/i;
@@ -67,16 +92,18 @@ document.addEventListener('DOMContentLoaded', () => {
     return Boolean(relativePath) && relativePath.split('/').every((part) => part && part !== '.' && part !== '..');
   };
 
+  const preferMp3 = (entry) => {
+    const list = (Array.isArray(entry.sources) && entry.sources.length ? entry.sources : [entry.src])
+      .filter(isLocalVoiceAsset);
+    const mp3 = list.filter((src) => /\.mp3$/i.test(src));
+    return mp3.length ? mp3 : list;
+  };
+
   function readVoiceCatalog() {
     const source = window.ARK_MASCOT_VOICE_ASSETS;
     const catalog = {};
     Object.keys(ACTIONS).forEach((key) => {
-      catalog[key] = source && Array.isArray(source[key]) ? source[key].filter((entry) => {
-        if (!entry) return false;
-        if (typeof entry.src === 'string' && isLocalVoiceAsset(entry.src)) return true;
-        if (Array.isArray(entry.sources) && entry.sources.some(isLocalVoiceAsset)) return true;
-        return false;
-      }) : [];
+      catalog[key] = source && Array.isArray(source[key]) ? source[key].filter((entry) => preferMp3(entry).length) : [];
     });
     return catalog;
   }
@@ -84,12 +111,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function readPromoConfig() {
     const promo = window.ARK_MASCOT_PROMO_CONFIG;
     if (!promo || typeof promo !== 'object' || !promo.enabled || !Array.isArray(promo.entries)) return null;
-    const validEntries = promo.entries.filter((entry) => {
-      if (!entry) return false;
-      if (typeof entry.src === 'string' && isLocalVoiceAsset(entry.src)) return true;
-      if (Array.isArray(entry.sources) && entry.sources.some(isLocalVoiceAsset)) return true;
-      return false;
-    });
+    const validEntries = promo.entries.filter((entry) => preferMp3(entry).length);
     return validEntries.length ? { ...promo, entries: validEntries } : null;
   }
 
@@ -97,16 +119,21 @@ document.addEventListener('DOMContentLoaded', () => {
     if (document.getElementById('ark-mascot')) return;
     const root = document.createElement('aside');
     root.id = 'ark-mascot';
-    root.className = 'ark-mascot';
+    root.className = 'ark-mascot is-loading';
     root.setAttribute('aria-label', '罗德岛小干员');
-    root.innerHTML = '<div class="ark-bubble" id="ark-bubble" role="status" aria-live="polite"></div><div class="ark-bob"><div class="ark-stage" id="ark-stage" role="button" tabindex="0" aria-label="与阿米娅互动">' + MASCOT_HTML + '</div></div><div class="ark-tag">RHODES ISLAND</div><button class="ark-sound" id="ark-sound" type="button" aria-label="开关语音和点击音效" title="开关语音和点击音效" aria-pressed="true">♪</button>';
+    root.innerHTML = '<div class="ark-live" id="ark-live" aria-live="polite"></div><div class="ark-bubble" id="ark-bubble" role="presentation"></div><div class="ark-bob"><div class="ark-stage" id="ark-stage" role="button" tabindex="0" aria-label="与阿米娅互动"><canvas class="ark-sprite ark-canvas" id="ark-canvas" width="314" height="460" aria-hidden="true"></canvas></div></div><div class="ark-tag">RHODES ISLAND</div><button class="ark-sound" id="ark-sound" type="button" aria-label="开关语音和点击音效" title="开关语音和点击音效" aria-pressed="true">♪</button><button class="ark-hide" id="ark-hide" type="button" aria-label="收起阿米娅" title="收起阿米娅">–</button>';
     document.body.appendChild(root);
 
     const stage = root.querySelector('#ark-stage');
     const bubble = root.querySelector('#ark-bubble');
+    const live = root.querySelector('#ark-live');
     const canvas = root.querySelector('#ark-canvas');
-    const ctx = canvas.getContext('2d', { alpha: true });
+    const ctx = canvas.getContext('2d', { alpha: true, desynchronized: true });
+    if (!ctx) return;
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
     const soundButton = root.querySelector('#ark-sound');
+    const hideButton = root.querySelector('#ark-hide');
     const voiceCatalog = readVoiceCatalog();
     const promoConfig = readPromoConfig();
 
@@ -119,66 +146,88 @@ document.addEventListener('DOMContentLoaded', () => {
       },
     };
 
-    // ================== Canvas 图集管理与平滑渲染 ==================
     const sheets = {};
+    let firstFrame = null;
     let idleFramesReady = false;
+    let rafId = null;
+    let collapsed = storage.get('ark_hidden', '0') === '1';
 
-    const loadSingleSheet = (key, url) => {
-      return new Promise((resolve) => {
-        const img = new Image();
-        img.decoding = 'async';
-        img.onload = () => {
-          sheets[key] = img;
-          resolve(img);
-        };
-        img.onerror = () => resolve(null);
-        img.src = url;
-      });
+    const stopLoop = () => {
+      if (rafId) cancelAnimationFrame(rafId);
+      rafId = null;
+    };
+
+    const syncCanvas = () => {
+      const cssW = Math.max(1, canvas.clientWidth || 124);
+      const cssH = Math.max(1, canvas.clientHeight || Math.round(cssW * FRAME_H / FRAME_W));
+      const dpr = Math.min(window.devicePixelRatio || 1, 1.75);
+      const w = Math.max(1, Math.round(cssW * dpr));
+      const h = Math.max(1, Math.round(cssH * dpr));
+      if (canvas.width !== w || canvas.height !== h) {
+        canvas.width = w;
+        canvas.height = h;
+        return true;
+      }
+      return false;
+    };
+
+    const drawSource = (source, index) => {
+      if (!ctx || !source) return false;
+      const sw = source.width || source.naturalWidth || 0;
+      const sh = source.height || source.naturalHeight || 0;
+      if (!sw || !sh) return false;
+      const dw = canvas.width;
+      const dh = canvas.height;
+      ctx.clearRect(0, 0, dw, dh);
+      if (sw >= FRAME_W * 2) {
+        const idx = Math.max(0, Math.min(FRAME_COUNT - 1, index | 0));
+        ctx.drawImage(source, idx * FRAME_W, 0, FRAME_W, FRAME_H, 0, 0, dw, dh);
+      } else {
+        ctx.drawImage(source, 0, 0, sw, sh, 0, 0, dw, dh);
+      }
+      return true;
     };
 
     const drawFrame = (sheetKey, index) => {
       const sheet = sheets[sheetKey] || sheets.relax;
-      if (!sheet || !sheet.complete || sheet.naturalWidth === 0) return false;
-      const idx = Math.max(0, Math.min(FRAME_COUNT - 1, index));
-      ctx.clearRect(0, 0, 314, 460);
-      ctx.drawImage(sheet, idx * 314, 0, 314, 460, 0, 0, 314, 460);
-      return true;
+      if (sheet) return drawSource(sheet, index);
+      if (firstFrame) return drawSource(firstFrame, 0);
+      return false;
     };
 
-    // 1. 毫秒级展示第一帧静态首图（23KB，秒级直出，保证初载绝不白屏）
-    const firstFrameImg = new Image();
-    firstFrameImg.onload = () => {
-      if (!idleFramesReady) {
-        ctx.clearRect(0, 0, 314, 460);
-        ctx.drawImage(firstFrameImg, 0, 0);
+    const loadSheet = async (key, url) => {
+      try {
+        const response = await fetch(url, { cache: 'force-cache' });
+        if (!response.ok) throw new Error(String(response.status));
+        const blob = await response.blob();
+        const bitmap = await createImageBitmap(blob);
+        if (key) sheets[key] = bitmap;
+        return bitmap;
+      } catch (error) {
+        return new Promise((resolve) => {
+          const img = new Image();
+          img.decoding = 'async';
+          img.onload = () => {
+            if (key) sheets[key] = img;
+            resolve(img);
+          };
+          img.onerror = () => resolve(null);
+          img.src = url;
+        });
       }
     };
-    firstFrameImg.src = STATIC_FIRST_FRAME;
-
-    // 2. 优先预载待机动画图集（仅 432KB 单文件，杜绝 80 张网络并发阻塞）
-    loadSingleSheet('relax', SPRITE_SHEETS.relax).then(() => {
-      idleFramesReady = true;
-      drawFrame('relax', 0);
-      if (!document.hidden && state.phase === 'idle' && !REDUCED_MOTION.matches) {
-        runIdle();
-      }
-      // 3. 待机就绪后，后台空闲平缓预载 3 个动作图集，完全不抢占带宽
-      loadSingleSheet('interact_wave', SPRITE_SHEETS.interact_wave)
-        .then(() => loadSingleSheet('interact_step_a', SPRITE_SHEETS.interact_step_a))
-        .then(() => loadSingleSheet('interact_step_b', SPRITE_SHEETS.interact_step_b));
-    });
 
     let count = Math.max(0, Number.parseInt(storage.get('ark_pokes', '0'), 10) || 0);
     let muted = storage.get('ark_muted', '0') === '1';
     let typeTimer = null;
     let hideTimer = null;
-    let idleFrameTimer = null;
     let idleLineTimer = null;
     let awayTimer = null;
     let actionTimer = null;
     let audioContext = null;
     let activeAudio = null;
     let blipNodes = [];
+    const audioUrls = new Map();
 
     const state = {
       phase: 'idle',
@@ -197,6 +246,7 @@ document.addEventListener('DOMContentLoaded', () => {
       lastVoiceId: '',
       recentVoiceLines: [],
       voiceToken: 0,
+      interacted: false,
     };
 
     const clearSpeechTimers = () => {
@@ -211,58 +261,82 @@ document.addEventListener('DOMContentLoaded', () => {
       actionTimer = null;
     };
 
-    const stopIdle = () => {
-      clearTimeout(idleFrameTimer);
-      idleFrameTimer = null;
-    };
-
     const runIdle = () => {
-      stopIdle();
-      if (REDUCED_MOTION.matches || document.hidden || state.phase === 'action') return;
+      stopLoop();
+      if (collapsed || REDUCED_MOTION.matches || document.hidden || state.phase === 'action') {
+        drawFrame('relax', idleFramesReady ? state.idleIndex : 0);
+        return;
+      }
       if (!idleFramesReady) {
         drawFrame('relax', 0);
         return;
       }
-      const loop = () => {
-        if (document.hidden || state.phase === 'action') return;
-        state.idleIndex = (state.idleIndex + 1) % FRAME_COUNT;
+      let last = performance.now();
+      let acc = 0;
+      const tick = (now) => {
+        if (collapsed || document.hidden || state.phase === 'action') return;
+        acc += now - last;
+        last = now;
+        while (acc >= IDLE_FRAME_MS) {
+          acc -= IDLE_FRAME_MS;
+          state.idleIndex = (state.idleIndex + 1) % FRAME_COUNT;
+        }
         drawFrame('relax', state.idleIndex);
-        idleFrameTimer = setTimeout(loop, IDLE_FRAME_MS);
+        rafId = requestAnimationFrame(tick);
       };
-      idleFrameTimer = setTimeout(loop, IDLE_FRAME_MS);
+      rafId = requestAnimationFrame(tick);
     };
 
-    // ================== 音频管理器（杜绝旧音残留 · 保证新音秒播） ==================
     const stopBlip = () => {
       blipNodes.forEach((node) => { try { node.stop(); } catch (error) {} });
       blipNodes = [];
     };
 
     const stopAudio = () => {
-      state.voiceToken += 1; // 关键：立即作废所有旧异步任务与计时器
+      state.voiceToken += 1;
       if (activeAudio) {
-        const a = activeAudio;
+        const audio = activeAudio;
         activeAudio = null;
-        a.onended = null;
-        a.onpause = null;
-        a.onerror = null;
-        try { a.pause(); } catch (error) {}
-        try { a.currentTime = 0; } catch (error) {}
-        try {
-          a.src = '';
-          a.load(); // 强制释放硬件音频通道，绝不滞留声音
-        } catch (error) {}
+        audio.onended = null;
+        audio.onpause = null;
+        audio.onerror = null;
+        try { audio.pause(); } catch (error) {}
+        try { audio.removeAttribute('src'); audio.load(); } catch (error) {}
       }
       stopBlip();
     };
 
+    const ensureAudioUrl = async (src) => {
+      if (audioUrls.has(src)) return audioUrls.get(src);
+      const response = await fetch(src, { cache: 'force-cache' });
+      if (!response.ok) throw new Error(`audio ${response.status}`);
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      audioUrls.set(src, url);
+      return url;
+    };
+
+    const preloadVoices = () => {
+      const entries = Object.values(voiceCatalog).flat();
+      PRELOAD_VOICE_IDS.forEach((id) => {
+        const entry = entries.find((item) => item.id === id);
+        const src = entry ? preferMp3(entry)[0] : null;
+        if (src) ensureAudioUrl(src).catch(() => {});
+      });
+    };
+
+    const rememberVoiceLine = (line) => {
+      if (!line) return;
+      state.recentVoiceLines.push(line);
+      if (state.recentVoiceLines.length > 5) state.recentVoiceLines.shift();
+    };
+
     const playVoice = (entry, line) => {
       if (muted || !entry) return null;
-      stopAudio(); // 每次调用无条件彻底停掉上一次语音！
+      stopAudio();
       const token = state.voiceToken;
-
-      const candidateSources = (Array.isArray(entry.sources) && entry.sources.length ? entry.sources : [entry.src]).filter(isLocalVoiceAsset);
-      if (!candidateSources.length) return null;
+      const sources = preferMp3(entry);
+      if (!sources.length) return null;
 
       const audio = new Audio();
       audio.preload = 'auto';
@@ -270,27 +344,25 @@ document.addEventListener('DOMContentLoaded', () => {
       audio.volume = Number.isFinite(volume) ? Math.min(1, Math.max(0, volume)) : 0.8;
       activeAudio = audio;
 
-      let srcIndex = 0;
-      const startPlay = () => {
-        if (token !== state.voiceToken) return;
-        audio.src = candidateSources[srcIndex];
-        const playPromise = audio.play();
-        if (playPromise && typeof playPromise.catch === 'function') {
-          playPromise.catch((err) => {
-            // 被快速连击主动打断时产生的 AbortError 属于正常现象，直接忽略
+      const startPlay = async () => {
+        for (let index = 0; index < sources.length; index += 1) {
+          if (token !== state.voiceToken) return;
+          try {
+            const url = await ensureAudioUrl(sources[index]);
             if (token !== state.voiceToken) return;
-            if (err.name === 'AbortError') return;
-            if (srcIndex < candidateSources.length - 1) {
-              srcIndex += 1;
-              startPlay();
-            }
-          });
+            audio.src = url;
+            await audio.play();
+            return;
+          } catch (error) {
+            if (token !== state.voiceToken) return;
+            if (error && error.name === 'AbortError') return;
+          }
         }
       };
 
       try {
         state.lastVoiceAt = Date.now();
-        state.lastVoiceId = entry.id || candidateSources[0];
+        state.lastVoiceId = entry.id || sources[0];
         rememberVoiceLine(line);
         startPlay();
         return audio;
@@ -300,27 +372,29 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     };
 
-    const rememberVoiceLine = (line) => {
-      if (!line) return;
-      state.recentVoiceLines.push(line);
-      if (state.recentVoiceLines.length > 5) state.recentVoiceLines.shift();
-    };
-
     const getEntryLine = (entry) => {
       if (!entry) return null;
       if (Array.isArray(entry.lines) && entry.lines.length) {
-        const candidates = entry.lines.filter((l) => !state.recentVoiceLines.includes(l));
+        const candidates = entry.lines.filter((line) => !state.recentVoiceLines.includes(line));
         return candidates.length ? candidates[Math.floor(Math.random() * candidates.length)] : entry.lines[0];
       }
       if (typeof entry.line === 'string' && entry.line.trim()) return entry.line.trim();
       return null;
     };
 
-    const pickVoiceAsset = (actionKey) => {
+    const pickVoiceAsset = (actionKey, clickType) => {
       const entries = voiceCatalog[actionKey] || [];
       if (!entries.length) return null;
-      const fresh = entries.filter((entry) => (entry.id || entry.src) !== state.lastVoiceId);
-      const pool = fresh.length ? fresh : entries;
+      let pool = entries;
+      if (clickType) {
+        const typed = entries.filter((entry) => {
+          if (!Array.isArray(entry.types) || !entry.types.length) return true;
+          return entry.types.includes(clickType) || entry.types.includes('any');
+        });
+        if (typed.length) pool = typed;
+      }
+      const fresh = pool.filter((entry) => (entry.id || entry.src) !== state.lastVoiceId);
+      if (fresh.length) pool = fresh;
       const total = pool.reduce((sum, entry) => sum + (Number(entry.weight) > 0 ? Number(entry.weight) : 1), 0);
       let cursor = Math.random() * total;
       for (const entry of pool) {
@@ -330,29 +404,28 @@ document.addEventListener('DOMContentLoaded', () => {
       return pool[0];
     };
 
-    // ================== 气泡打字机与音字同步 ==================
     const say = (text, minHold = 3600, audioObj = null) => {
+      if (typeof text !== 'string' || !text) return;
       clearSpeechTimers();
       bubble.classList.add('show');
       bubble.textContent = '';
+      live.textContent = text;
       const token = state.voiceToken;
       let textFinished = false;
       let audioFinished = !audioObj;
+      let hideArmed = false;
 
       const scheduleBubbleHide = (delayMs) => {
+        if (hideArmed) return;
+        hideArmed = true;
         clearTimeout(hideTimer);
         hideTimer = setTimeout(() => {
-          if (token === state.voiceToken) {
-            bubble.classList.remove('show');
-          }
+          if (token === state.voiceToken) bubble.classList.remove('show');
         }, Math.max(800, delayMs));
       };
 
       const tryHide = () => {
-        // 核心要求：字出现时间至少要和语音时间一样长。文字打完且音频播放完毕时才启动 1.2s 消失倒计时！
-        if (textFinished && audioFinished) {
-          scheduleBubbleHide(1200);
-        }
+        if (textFinished && audioFinished) scheduleBubbleHide(1200);
       };
 
       if (audioObj) {
@@ -362,17 +435,24 @@ document.addEventListener('DOMContentLoaded', () => {
           tryHide();
         };
         audioObj.addEventListener('ended', onAudioDone, { once: true });
-        audioObj.addEventListener('pause', onAudioDone, { once: true });
         audioObj.addEventListener('error', onAudioDone, { once: true });
-        // 超时兜底保障：即使浏览器没有正常派发 ended 事件，依据音频时长保证字在播放期间绝不提前消失
-        if (audioObj.duration && Number.isFinite(audioObj.duration) && audioObj.duration > 0) {
+        const armDuration = () => {
+          if (!Number.isFinite(audioObj.duration) || audioObj.duration <= 0) return;
           setTimeout(() => {
             if (token === state.voiceToken && !audioFinished) {
               audioFinished = true;
               tryHide();
             }
           }, Math.ceil(audioObj.duration * 1000) + 1200);
-        }
+        };
+        if (audioObj.duration > 0) armDuration();
+        else audioObj.addEventListener('loadedmetadata', armDuration, { once: true });
+        setTimeout(() => {
+          if (token === state.voiceToken && !audioFinished) {
+            audioFinished = true;
+            tryHide();
+          }
+        }, 14000);
       }
 
       if (REDUCED_MOTION.matches) {
@@ -387,7 +467,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const caret = document.createElement('span');
       caret.className = 'ark-caret';
       caret.textContent = '_';
-      const stepMs = Math.max(16, Math.min(26, Math.floor(1200 / Math.max(text.length, 1))));
+      const stepMs = Math.max(18, Math.min(28, Math.floor(1200 / Math.max(text.length, 1))));
       typeTimer = setInterval(() => {
         if (token !== state.voiceToken) {
           clearInterval(typeTimer);
@@ -436,7 +516,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const burst = (x, y) => {
       if (REDUCED_MOTION.matches) return;
       const colors = ['#2fc4d6', '#7de8f0', '#f4f1f7', '#ffd98a'];
-      for (let index = 0; index < 9; index += 1) {
+      for (let index = 0; index < 5; index += 1) {
         const particle = document.createElement('i');
         const color = colors[index % colors.length];
         particle.className = 'ark-particle';
@@ -468,7 +548,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (quietFor >= LONG_IDLE_MS) {
         type = 'away';
         state.recentClicks = [record];
-      } else if (Date.now() >= state.chaosCooldownUntil && cluster.length >= 4 && gapRange >= 180 && (turns >= 1 || gapRange >= 320)) {
+      } else if (now >= state.chaosCooldownUntil && cluster.length >= 4 && gapRange >= 180 && (turns >= 1 || gapRange >= 320)) {
         type = 'chaotic';
         state.chaosCooldownUntil = now + CHAOS_COOLDOWN_MS;
         state.recentClicks = [record];
@@ -497,52 +577,63 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const playAction = (actionKey) => {
       const action = ACTIONS[actionKey] || ACTIONS.interact_wave;
-      stopIdle();
+      stopLoop();
       clearActionTimer();
       state.actionToken += 1;
       const token = state.actionToken;
       state.phase = 'action';
       state.actionKey = actionKey;
       state.lastActionKey = actionKey;
-      stage.classList.add('is-action');
-
       const targetSheet = sheets[actionKey] ? actionKey : 'relax';
-      const frameMs = action.duration / FRAME_COUNT;
-      let frameIndex = 0;
 
-      const advance = () => {
+      if (REDUCED_MOTION.matches) {
+        drawFrame(targetSheet, 0);
+        actionTimer = setTimeout(() => {
+          if (token !== state.actionToken) return;
+          state.phase = 'idle';
+          state.actionKey = null;
+          drawFrame('relax', 0);
+          runIdle();
+        }, 360);
+        return;
+      }
+
+      const started = performance.now();
+      const duration = action.duration;
+      const tick = (now) => {
         if (token !== state.actionToken || state.phase !== 'action') return;
-        drawFrame(targetSheet, frameIndex);
-        frameIndex += 1;
-        if (frameIndex < FRAME_COUNT) {
-          actionTimer = setTimeout(advance, frameMs);
+        const elapsed = now - started;
+        const idx = Math.min(FRAME_COUNT - 1, Math.floor((elapsed / duration) * FRAME_COUNT));
+        drawFrame(targetSheet, idx);
+        if (elapsed < duration) {
+          rafId = requestAnimationFrame(tick);
         } else {
-          // 动作动画播完后，平滑复位待机，注意：绝不打印无声结语对白覆盖语音！
           actionTimer = setTimeout(() => {
             if (token !== state.actionToken || state.phase !== 'action') return;
             state.phase = 'idle';
             state.actionKey = null;
-            stage.classList.remove('is-action');
+            state.idleIndex = 0;
             drawFrame('relax', 0);
             runIdle();
           }, ACTION_TAIL_MS);
         }
       };
-      advance();
+      rafId = requestAnimationFrame(tick);
     };
 
     const scheduleIdleLines = () => {
       clearTimeout(idleLineTimer);
       const check = () => {
         const quietFor = Date.now() - state.lastUserAt;
-        if (document.visibilityState === 'visible' && state.phase !== 'action' && quietFor >= 26000) {
-          // 空闲提醒：选取一条真实的待机原声播放并展示对白，杜绝无声冒字
+        if (state.interacted && !collapsed && !muted && document.visibilityState === 'visible' && state.phase !== 'action' && quietFor >= 26000) {
           const idleEntries = voiceCatalog.interact_step_a || voiceCatalog.interact_wave || [];
-          const entry = idleEntries.find((e) => e.id === 'amiya-idle-alert') || idleEntries[0];
-          if (entry && !muted) {
+          const entry = idleEntries.find((item) => item.id === 'amiya-idle-alert') || idleEntries[0];
+          if (entry) {
             const line = getEntryLine(entry);
-            const aud = playVoice(entry, line);
-            say(line, 4000, aud);
+            if (line) {
+              const aud = playVoice(entry, line);
+              say(line, 4000, aud);
+            }
           }
         }
         idleLineTimer = setTimeout(check, 45000 + Math.random() * 18000);
@@ -555,14 +646,15 @@ document.addEventListener('DOMContentLoaded', () => {
       const check = () => {
         const quietFor = Date.now() - state.lastUserAt;
         const canAnnounce = Date.now() - state.lastAwayNoticeAt >= AWAY_NOTICE_COOLDOWN_MS;
-        if (document.visibilityState === 'visible' && state.phase !== 'action' && quietFor >= LONG_IDLE_MS && canAnnounce) {
+        if (state.interacted && !collapsed && !muted && document.visibilityState === 'visible' && state.phase !== 'action' && quietFor >= LONG_IDLE_MS && canAnnounce) {
           state.lastAwayNoticeAt = Date.now();
-          // 离开回归提醒：选取官方原声 official_cn_009 进行陪伴提示，杜绝无声冒字
-          const awayEntry = (voiceCatalog.interact_wave || []).find((e) => e.id === 'amiya-companion');
-          if (awayEntry && !muted) {
+          const awayEntry = (voiceCatalog.interact_wave || []).find((item) => item.id === 'amiya-companion');
+          if (awayEntry) {
             const line = getEntryLine(awayEntry);
-            const aud = playVoice(awayEntry, line);
-            say(line, 5000, aud);
+            if (line) {
+              const aud = playVoice(awayEntry, line);
+              say(line, 5000, aud);
+            }
           }
         }
         awayTimer = setTimeout(check, 50000 + Math.random() * 20000);
@@ -572,11 +664,32 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const restartIdleAndNotices = () => { runIdle(); scheduleIdleLines(); scheduleAway(); };
 
-    // ================== 核心交互入口 (点击触发) ==================
+    const applyCollapsed = () => {
+      root.classList.toggle('is-collapsed', collapsed);
+      hideButton.setAttribute('aria-label', collapsed ? '展开阿米娅' : '收起阿米娅');
+      hideButton.setAttribute('title', collapsed ? '展开阿米娅' : '收起阿米娅');
+      hideButton.textContent = collapsed ? '' : '–';
+      if (collapsed) {
+        stopLoop();
+        clearActionTimer();
+        stopAudio();
+        clearSpeechTimers();
+        bubble.classList.remove('show');
+        live.textContent = '';
+        state.phase = 'idle';
+        state.actionKey = null;
+      } else {
+        syncCanvas();
+        drawFrame('relax', idleFramesReady ? state.idleIndex : 0);
+        runIdle();
+      }
+    };
+
     const activate = (event) => {
-      // 1. 核心要求：每一次点击立即强行切断上一句语音、打字机和气泡倒计时
+      if (collapsed) return;
       stopAudio();
       clearSpeechTimers();
+      state.interacted = true;
 
       if (!muted) {
         try {
@@ -599,43 +712,24 @@ document.addEventListener('DOMContentLoaded', () => {
       count += 1;
       storage.set('ark_pokes', String(count));
       burst(point.x, point.y);
-
-      // 2. 核心要求：开启下一次动作动画
       playAction(actionKey);
 
-      // 3. 核心要求：开启下一次的字以及字所对应的语音（100% 官方原声匹配，绝不出现无声文本）
       let voiceEntry = null;
-
-      // 检查里程碑宣传触发 (如第 5, 10, 20, 50, 100 次点击)
       if (promoConfig && Array.isArray(promoConfig.triggerMilestones) && promoConfig.triggerMilestones.includes(count)) {
-        const pEntries = promoConfig.entries || [];
-        voiceEntry = pEntries[Math.floor(Math.random() * pEntries.length)] || null;
+        const promoEntries = promoConfig.entries || [];
+        voiceEntry = promoEntries[Math.floor(Math.random() * promoEntries.length)] || null;
       }
-
-      // 常规动作匹配可用语音条目（确保每一个动作都有专属真实语音包）
-      if (!voiceEntry) {
-        voiceEntry = pickVoiceAsset(actionKey);
-      }
-
-      // 若动作语音库暂未命中，安全回退到问候原声库，确保点击 100% 有语音
+      if (!voiceEntry) voiceEntry = pickVoiceAsset(actionKey, clickType);
       if (!voiceEntry) {
         const fallbackPool = voiceCatalog.interact_wave || [];
         voiceEntry = fallbackPool[Math.floor(Math.random() * fallbackPool.length)] || null;
       }
 
-      // 台词严格取自该官方原声条目的实际录音对白！绝不从无声文本库随机抽取！
       const line = getEntryLine(voiceEntry) || '欢迎回家，博士！';
-
-      // 4. 播放该语音，并将 audio 对象传递给 say()，实现字音完全同步、字持续时间 >= 语音时间
       let audioInstance = null;
-      if (voiceEntry && !muted) {
-        audioInstance = playVoice(voiceEntry, line);
-      } else if (!muted) {
-        blip(actionKey, clickType);
-      }
-
+      if (voiceEntry && !muted) audioInstance = playVoice(voiceEntry, line);
+      else if (!muted) blip(actionKey, clickType);
       say(line, 3600, audioInstance);
-
       scheduleIdleLines();
       scheduleAway();
     };
@@ -662,15 +756,24 @@ document.addEventListener('DOMContentLoaded', () => {
         stopAudio();
         clearSpeechTimers();
         bubble.classList.remove('show');
+        live.textContent = '';
       } else {
         blip('interact_wave', 'single');
         say('音效已开启 ♪', 1600);
+        preloadVoices();
       }
+    });
+
+    hideButton.addEventListener('click', (event) => {
+      event.stopPropagation();
+      collapsed = !collapsed;
+      storage.set('ark_hidden', collapsed ? '1' : '0');
+      applyCollapsed();
     });
 
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) {
-        stopIdle();
+        stopLoop();
         clearActionTimer();
         state.actionToken += 1;
         state.phase = 'idle';
@@ -682,15 +785,19 @@ document.addEventListener('DOMContentLoaded', () => {
         drawFrame('relax', 0);
       } else {
         state.idleIndex = 0;
+        syncCanvas();
         drawFrame('relax', 0);
         restartIdleAndNotices();
       }
     });
 
     window.addEventListener('pagehide', stopAudio);
+    window.addEventListener('resize', () => {
+      if (syncCanvas()) drawFrame(state.actionKey || 'relax', state.idleIndex);
+    });
 
     const onMotionPreferenceChange = () => {
-      stopIdle();
+      stopLoop();
       clearActionTimer();
       clearSpeechTimers();
       bubble.classList.remove('show');
@@ -706,8 +813,34 @@ document.addEventListener('DOMContentLoaded', () => {
     if (typeof REDUCED_MOTION.addEventListener === 'function') REDUCED_MOTION.addEventListener('change', onMotionPreferenceChange);
     else if (typeof REDUCED_MOTION.addListener === 'function') REDUCED_MOTION.addListener(onMotionPreferenceChange);
 
+    syncCanvas();
     syncSoundButton();
-    restartIdleAndNotices();
+    applyCollapsed();
+
+    loadSheet(null, STATIC_FIRST_FRAME).then((image) => {
+      firstFrame = image;
+      if (!idleFramesReady) {
+        syncCanvas();
+        drawSource(image, 0);
+      }
+    });
+
+    loadSheet('relax', SPRITE_SHEETS.relax).then((image) => {
+      idleFramesReady = Boolean(image);
+      root.classList.remove('is-loading');
+      syncCanvas();
+      drawFrame('relax', 0);
+      if (!collapsed && !document.hidden && state.phase === 'idle' && !REDUCED_MOTION.matches) runIdle();
+      Promise.all([
+        loadSheet('interact_wave', SPRITE_SHEETS.interact_wave),
+        loadSheet('interact_step_a', SPRITE_SHEETS.interact_step_a),
+        loadSheet('interact_step_b', SPRITE_SHEETS.interact_step_b),
+      ]).then(() => {
+        if (!muted) preloadVoices();
+      });
+    });
+
+    if (!collapsed) restartIdleAndNotices();
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
